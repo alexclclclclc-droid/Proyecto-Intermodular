@@ -99,3 +99,106 @@ include ROOT_PATH . 'views/partials/header.php';
             </div>
         </div>
     </section>
+<!-- CTA Section --> 
+<section class="py-4" style="background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary)); color: white;">
+        <div class="container text-center">
+            <h2 style="color: white; margin-bottom: var(--space-md);">¿Listo para tu próxima escapada?</h2>
+            <p style="max-width: 600px; margin: 0 auto var(--space-xl); opacity: 0.9;">
+                Regístrate gratis y guarda tus apartamentos favoritos, recibe alertas de disponibilidad 
+                y gestiona tus reservas fácilmente.
+            </p>
+            <button class="btn btn-accent btn-lg" data-modal-open="modal-registro">
+                Crear cuenta gratis
+            </button>
+        </div>
+    </section>
+</main>
+
+<?php include ROOT_PATH . 'views/partials/footer.php'; ?>
+
+<script>
+// Cargar estadísticas
+async function loadStats() {
+    try {
+        const response = await apiRequest('apartamentos.php?action=estadisticas');
+        if (response.success && response.data) {
+            document.getElementById('stat-total').textContent = response.data.total.toLocaleString('es-ES');
+            document.getElementById('stat-municipios').textContent = response.data.por_provincia.length > 50 ? '200+' : '100+';
+        }
+    } catch (e) {
+        console.error('Error cargando stats:', e);
+    }
+}
+
+// Cargar provincias
+async function loadProvincias() {
+    const container = document.getElementById('provincias-grid');
+    try {
+        const response = await apiRequest('apartamentos.php?action=provincias');
+        if (response.success && response.data) {
+            const iconos = {
+                'Ávila': '🏔️',
+                'Burgos': '🏰',
+                'León': '👑',
+                'Palencia': '⛪',
+                'Salamanca': '🎓',
+                'Segovia': '🏛️',
+                'Soria': '🌲',
+                'Valladolid': '🍷',
+                'Zamora': '🌉'
+            };
+            
+            container.innerHTML = response.data.map(p => `
+                <a href="views/apartamentos.php?provincia=${encodeURIComponent(p.provincia)}" class="provincia-card">
+                    <span class="provincia-icon">${iconos[p.provincia] || '🏠'}</span>
+                    <h3>${escapeHtml(p.provincia)}</h3>
+                    <span class="provincia-count">${p.total} apartamentos</span>
+                </a>
+            `).join('');
+        }
+    } catch (e) {
+        container.innerHTML = '<p class="text-muted" style="grid-column:1/-1; text-align:center;">Error al cargar provincias</p>';
+    }
+}
+
+// Cargar destacados
+async function loadDestacados() {
+    const container = document.getElementById('destacados-grid');
+    try {
+        const response = await apiRequest('apartamentos.php?action=destacados&limit=6');
+        if (response.success && response.data) {
+            container.innerHTML = response.data.map(apt => `
+                <article class="card">
+                    <div class="card-image">
+                        <span class="card-image-placeholder">🏠</span>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">${escapeHtml(apt.nombre)}</h3>
+                        <p class="card-subtitle">
+                            📍 ${escapeHtml(apt.municipio || apt.provincia)}
+                        </p>
+                        <div class="card-meta">
+                            <span class="card-meta-item">👥 ${apt.capacidad_alojamiento || '?'} plazas</span>
+                            ${apt.accesible ? '<span class="badge badge-accent">♿ Accesible</span>' : ''}
+                        </div>
+                    </div>
+                    <div style="padding: var(--space-md) var(--space-lg); border-top: 1px solid var(--color-border);">
+                        <button class="btn btn-primary btn-sm" onclick="ApartamentosModule.showDetail(${apt.id})">
+                            Ver detalles
+                        </button>
+                    </div>
+                </article>
+            `).join('');
+        }
+    } catch (e) {
+        container.innerHTML = '<p class="text-muted" style="grid-column:1/-1; text-align:center;">Error al cargar apartamentos</p>';
+    }
+}
+
+// Iniciar
+document.addEventListener('DOMContentLoaded', () => {
+    loadStats();
+    loadProvincias();
+    loadDestacados();
+});
+</script>
