@@ -14,7 +14,7 @@ include ROOT_PATH . 'views/partials/header.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="/PruebaIntermodular/public/css/styles.css">
+    <link rel="stylesheet" href="/Proyecto-Intermodular/public/css/styles.css">
 </head>
 <body>
     

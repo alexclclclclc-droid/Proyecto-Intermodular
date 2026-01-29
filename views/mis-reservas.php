@@ -14,6 +14,18 @@ if (!isLoggedIn()) {
 $pageTitle = 'Mis Reservas';
 include ROOT_PATH . 'views/partials/header.php';
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/Proyecto-Intermodular/public/css/styles.css">
+</head>
+<body>
+    
+</body>
+</html>
 
 <main>
     <!-- Header de página -->
