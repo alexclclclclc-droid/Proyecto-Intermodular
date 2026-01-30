@@ -6,6 +6,14 @@ if (!defined('ROOT_PATH')) {
     define('ROOT_PATH', dirname(__DIR__) . '/');
 }
 require_once ROOT_PATH . 'config/config.php';
+
+// Detectar si estamos en una subcarpeta (views) o en la raíz
+$currentFile = basename($_SERVER['PHP_SELF']);
+$inViews = strpos($_SERVER['PHP_SELF'], '/views/') !== false;
+
+// Construir rutas relativas correctas
+$basePath = $inViews ? '../' : './';
+$viewsPath = $inViews ? './' : './views/';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -24,7 +32,7 @@ require_once ROOT_PATH . 'config/config.php';
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <!-- Estilos principales -->
-    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/styles.css">
+    <link rel="stylesheet" href="<?= $basePath ?>public/css/styles.css">
     
     <?php if (isset($extraCSS)): ?>
         <?= $extraCSS ?>
@@ -33,7 +41,7 @@ require_once ROOT_PATH . 'config/config.php';
 <body>
     <header class="header">
         <div class="container header-inner">
-            <a href="<?= BASE_URL ?>" class="logo">
+            <a href="<?= $basePath ?>index.php" class="logo">
                 <span class="logo-icon">🏠</span>
                 <span>Apartamentos<span class="text-accent">CyL</span></span>
             </a>
@@ -45,11 +53,11 @@ require_once ROOT_PATH . 'config/config.php';
             </button>
             
             <nav class="nav">
-                <a href="<?= BASE_URL ?>" class="nav-link <?= basename($_SERVER['PHP_SELF']) === 'index.php' ? 'active' : '' ?>">Inicio</a>
-                <a href="<?= BASE_URL ?>views/apartamentos.php" class="nav-link <?= basename($_SERVER['PHP_SELF']) === 'apartamentos.php' ? 'active' : '' ?>">Apartamentos</a>
-                <a href="<?= BASE_URL ?>views/mapa.php" class="nav-link <?= basename($_SERVER['PHP_SELF']) === 'mapa.php' ? 'active' : '' ?>">Mapa</a>
+                <a href="<?= $basePath ?>index.php" class="nav-link <?= $currentFile === 'index.php' ? 'active' : '' ?>">Inicio</a>
+                <a href="<?= $viewsPath ?>apartamentos.php" class="nav-link <?= $currentFile === 'apartamentos.php' ? 'active' : '' ?>">Apartamentos</a>
+                <a href="<?= $viewsPath ?>mapa.php" class="nav-link <?= $currentFile === 'mapa.php' ? 'active' : '' ?>">Mapa</a>
                 <?php if (isLoggedIn()): ?>
-                    <a href="<?= BASE_URL ?>views/mis-reservas.php" class="nav-link <?= basename($_SERVER['PHP_SELF']) === 'mis-reservas.php' ? 'active' : '' ?>">Mis Reservas</a>
+                    <a href="<?= $viewsPath ?>mis-reservas.php" class="nav-link <?= $currentFile === 'mis-reservas.php' ? 'active' : '' ?>">Mis Reservas</a>
                 <?php endif; ?>
             </nav>
             
