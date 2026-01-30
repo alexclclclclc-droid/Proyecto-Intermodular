@@ -7,7 +7,7 @@
 // CONFIGURACIÓN Y UTILIDADES
 // ===================================
 
-const API_BASE = './api';
+const API_BASE = '/Proyecto-Intermodular/api';
 
 /**
  * Realiza peticiones a la API con manejo de errores
