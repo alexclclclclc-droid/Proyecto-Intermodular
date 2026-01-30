@@ -20,13 +20,9 @@ include ROOT_PATH . 'views/partials/header.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="/Proyecto-Intermodular/public/css/styles.css">
+    <link rel="stylesheet" href="/PruebaFinal/public/css/styles.css">
 </head>
 <body>
-    
-</body>
-</html>
-
 <main>
     <!-- Header de página -->
     <section style="background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary)); padding: var(--space-3xl) 0; color: white;">
