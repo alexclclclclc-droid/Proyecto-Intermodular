@@ -38,8 +38,8 @@ class ApiSyncService {
             foreach ($apartamentos as $index => $record) {
                 $this->procesarRegistro($record);
                 
-                // Log de progreso cada 100 registros
-                if (($index + 1) % 100 === 0) {
+                // Log de progreso cada 50 registros
+                if (($index + 1) % 50 === 0) {
                     $this->log("Procesados " . ($index + 1) . "/{$total} registros...");
                 }
             }
@@ -69,17 +69,18 @@ class ApiSyncService {
             
             if ($totalCount === null) {
                 $totalCount = $response['total_count'] ?? 0;
-                $this->log("Total de registros en API: {$totalCount}");
+                $this->log("Total de apartamentos en API: {$totalCount}");
             }
 
             if (!empty($response['results'])) {
                 $todos = array_merge($todos, $response['results']);
+                $this->log("Descargados " . count($todos) . " de {$totalCount}...");
             }
 
             $offset += $limit;
             
             // Pequeña pausa para no saturar la API
-            usleep(100000); // 100ms
+            usleep(200000); // 200ms
 
         } while ($offset < $totalCount);
 
@@ -87,17 +88,11 @@ class ApiSyncService {
     }
 
     /**
-     * Realiza llamada a la API
+     * Realiza llamada a la API - URL ya filtrada por Apartamentos Turísticos
      */
     private function llamarApi(int $limit = 100, int $offset = 0): array {
-        // Construir URL con parámetros
-        $params = [
-            'limit' => $limit,
-            'offset' => $offset,
-            'where' => 'tipo_establecimiento = "Apartamentos Turísticos"'
-        ];
-
-        $url = $this->apiUrl . '?' . http_build_query($params);
+        // URL con filtro correcto: refine=establecimiento:"Apartamentos Turísticos"
+        $url = $this->apiUrl . '?limit=' . $limit . '&offset=' . $offset . '&refine=establecimiento%3A%22Apartamentos%20Tur%C3%ADsticos%22';
         
         $this->log("Llamando API: limit={$limit}, offset={$offset}");
 
@@ -123,55 +118,7 @@ class ApiSyncService {
         }
 
         if ($httpCode !== 200) {
-            // Intentar sin filtro si falla
-            if ($httpCode === 400) {
-                return $this->llamarApiSinFiltro($limit, $offset);
-            }
-            throw new Exception("Error HTTP: {$httpCode}");
-        }
-
-        $data = json_decode($response, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception("Error JSON: " . json_last_error_msg());
-        }
-
-        return $data;
-    }
-
-    /**
-     * Llamada a la API sin filtro (backup)
-     */
-    private function llamarApiSinFiltro(int $limit = 100, int $offset = 0): array {
-        $params = [
-            'limit' => $limit,
-            'offset' => $offset
-        ];
-
-        $url = $this->apiUrl . '?' . http_build_query($params);
-
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_TIMEOUT => 60,
-            CURLOPT_HTTPHEADER => [
-                'Accept: application/json',
-                'User-Agent: ApartamentosCyL/1.0'
-            ]
-        ]);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
-
-        if ($error) {
-            throw new Exception("Error cURL: {$error}");
-        }
-
-        if ($httpCode !== 200) {
-            throw new Exception("Error HTTP: {$httpCode}");
+            throw new Exception("Error HTTP: {$httpCode} - URL: {$url}");
         }
 
         $data = json_decode($response, true);
@@ -187,12 +134,6 @@ class ApiSyncService {
      */
     private function procesarRegistro(array $record): void {
         try {
-            // Solo procesar apartamentos turísticos
-            $tipo = $record['tipo_establecimiento'] ?? '';
-            if (stripos($tipo, 'Apartamento') === false) {
-                return;
-            }
-
             $apartamento = $this->transformarRegistro($record);
             
             if ($apartamento === null) {
@@ -283,7 +224,6 @@ class ApiSyncService {
     private function limpiarTelefono(?string $telefono): ?string {
         if (empty($telefono)) return null;
         
-        // Eliminar caracteres no numéricos excepto + al inicio
         $limpio = preg_replace('/[^0-9+]/', '', $telefono);
         
         return strlen($limpio) >= 9 ? $limpio : null;
@@ -305,8 +245,8 @@ class ApiSyncService {
     private function log(string $mensaje): void {
         $timestamp = date('Y-m-d H:i:s');
         $this->log[] = "[{$timestamp}] {$mensaje}";
-        // También mostrar en tiempo real
         echo "[{$timestamp}] {$mensaje}\n";
+        ob_flush();
         flush();
     }
 
