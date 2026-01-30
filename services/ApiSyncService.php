@@ -17,7 +17,7 @@ class ApiSyncService {
     private array $log = [];
 
     public function __construct() {
-        $this->apiUrl = API_RECORDS_ENDPOINT;
+        $this->apiUrl = 'https://analisis.datosabiertos.jcyl.es/api/explore/v2.1/catalog/datasets/registro-de-turismo-de-castilla-y-leon/records';
         $this->apartamentoDAO = new ApartamentoDAO();
     }
 
@@ -40,7 +40,7 @@ class ApiSyncService {
                 
                 // Log de progreso cada 100 registros
                 if (($index + 1) % 100 === 0) {
-                    $this->log("Procesados {$index}/{$total} registros...");
+                    $this->log("Procesados " . ($index + 1) . "/{$total} registros...");
                 }
             }
 
@@ -90,21 +90,71 @@ class ApiSyncService {
      * Realiza llamada a la API
      */
     private function llamarApi(int $limit = 100, int $offset = 0): array {
-        $params = http_build_query([
+        // Construir URL con parámetros
+        $params = [
             'limit' => $limit,
             'offset' => $offset,
-            'refine' => 'tipo_establecimiento:"Apartamentos Turísticos"',
-            'timezone' => 'Europe/Madrid'
-        ]);
+            'where' => 'tipo_establecimiento = "Apartamentos Turísticos"'
+        ];
 
-        $url = $this->apiUrl . '?' . $params;
+        $url = $this->apiUrl . '?' . http_build_query($params);
+        
+        $this->log("Llamando API: limit={$limit}, offset={$offset}");
 
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_TIMEOUT => 30,
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+                'User-Agent: ApartamentosCyL/1.0'
+            ]
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            throw new Exception("Error cURL: {$error}");
+        }
+
+        if ($httpCode !== 200) {
+            // Intentar sin filtro si falla
+            if ($httpCode === 400) {
+                return $this->llamarApiSinFiltro($limit, $offset);
+            }
+            throw new Exception("Error HTTP: {$httpCode}");
+        }
+
+        $data = json_decode($response, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception("Error JSON: " . json_last_error_msg());
+        }
+
+        return $data;
+    }
+
+    /**
+     * Llamada a la API sin filtro (backup)
+     */
+    private function llamarApiSinFiltro(int $limit = 100, int $offset = 0): array {
+        $params = [
+            'limit' => $limit,
+            'offset' => $offset
+        ];
+
+        $url = $this->apiUrl . '?' . http_build_query($params);
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_TIMEOUT => 60,
             CURLOPT_HTTPHEADER => [
                 'Accept: application/json',
                 'User-Agent: ApartamentosCyL/1.0'
@@ -137,6 +187,12 @@ class ApiSyncService {
      */
     private function procesarRegistro(array $record): void {
         try {
+            // Solo procesar apartamentos turísticos
+            $tipo = $record['tipo_establecimiento'] ?? '';
+            if (stripos($tipo, 'Apartamento') === false) {
+                return;
+            }
+
             $apartamento = $this->transformarRegistro($record);
             
             if ($apartamento === null) {
@@ -185,14 +241,14 @@ class ApiSyncService {
         $accesible = false;
         if (!empty($record['accesible_a_personas_con_discapacidad'])) {
             $valor = strtolower($record['accesible_a_personas_con_discapacidad']);
-            $accesible = in_array($valor, ['sí', 'si', 'yes', 'true', '1']);
+            $accesible = in_array($valor, ['sí', 'si', 'yes', 'true', '1', 's']);
         }
 
         // Procesar Q de calidad
         $qCalidad = false;
         if (!empty($record['q_de_calidad_turistica'])) {
             $valor = strtolower($record['q_de_calidad_turistica']);
-            $qCalidad = in_array($valor, ['sí', 'si', 'yes', 'true', '1']);
+            $qCalidad = in_array($valor, ['sí', 'si', 'yes', 'true', '1', 's']);
         }
 
         return new Apartamento([
@@ -249,6 +305,9 @@ class ApiSyncService {
     private function log(string $mensaje): void {
         $timestamp = date('Y-m-d H:i:s');
         $this->log[] = "[{$timestamp}] {$mensaje}";
+        // También mostrar en tiempo real
+        echo "[{$timestamp}] {$mensaje}\n";
+        flush();
     }
 
     /**
