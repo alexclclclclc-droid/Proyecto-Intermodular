@@ -1,4 +1,13 @@
-<footer class="footer">
+<?php
+// Detectar si estamos en una subcarpeta (views) o en la raíz
+$currentFile = basename($_SERVER['PHP_SELF']);
+$inViews = strpos($_SERVER['PHP_SELF'], '/views/') !== false;
+
+// Construir rutas relativas correctas
+$basePath = $inViews ? '../' : './';
+$viewsPath = $inViews ? './' : './views/';
+?>
+    <footer class="footer">
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-section">
@@ -12,21 +21,20 @@
                 <div class="footer-section">
                     <h4>Explorar</h4>
                     <ul class="footer-links">
-                        <li><a href="<?= BASE_URL ?>">Inicio</a></li>
-                        <li><a href="<?= BASE_URL ?>views/apartamentos.php">Buscar apartamentos</a></li>
-                        <li><a href="<?= BASE_URL ?>views/mapa.php">Ver mapa</a></li>
-                        <li><a href="<?= BASE_URL ?>views/provincias.php">Por provincias</a></li>
+                        <li><a href="<?= $basePath ?>index.php">Inicio</a></li>
+                        <li><a href="<?= $viewsPath ?>apartamentos.php">Buscar apartamentos</a></li>
+                        <li><a href="<?= $viewsPath ?>mapa.php">Ver mapa</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h4>Provincias</h4>
                     <ul class="footer-links">
-                        <li><a href="<?= BASE_URL ?>views/apartamentos.php?provincia=Ávila">Ávila</a></li>
-                        <li><a href="<?= BASE_URL ?>views/apartamentos.php?provincia=Burgos">Burgos</a></li>
-                        <li><a href="<?= BASE_URL ?>views/apartamentos.php?provincia=León">León</a></li>
-                        <li><a href="<?= BASE_URL ?>views/apartamentos.php?provincia=Salamanca">Salamanca</a></li>
-                        <li><a href="<?= BASE_URL ?>views/apartamentos.php?provincia=Valladolid">Valladolid</a></li>
+                        <li><a href="<?= $viewsPath ?>apartamentos.php?provincia=Ávila">Ávila</a></li>
+                        <li><a href="<?= $viewsPath ?>apartamentos.php?provincia=Burgos">Burgos</a></li>
+                        <li><a href="<?= $viewsPath ?>apartamentos.php?provincia=León">León</a></li>
+                        <li><a href="<?= $viewsPath ?>apartamentos.php?provincia=Salamanca">Salamanca</a></li>
+                        <li><a href="<?= $viewsPath ?>apartamentos.php?provincia=Valladolid">Valladolid</a></li>
                     </ul>
                 </div>
                 
@@ -56,7 +64,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <!-- JavaScript principal -->
-    <script src="<?= BASE_URL ?>public/js/app.js"></script>
+    <script src="<?= $basePath ?>public/js/app.js"></script>
     
     <?php if (isset($extraJS)): ?>
         <?= $extraJS ?>
