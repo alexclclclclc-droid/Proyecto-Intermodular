@@ -6,7 +6,7 @@
 /* ===================================
    VARIABLES Y CONFIGURACIÓN
    =================================== */
-:root {
+   :root {
     /* Paleta de colores - Inspirada en Castilla */
     --color-primary: #1a365d;      /* Azul profundo castellano */
     --color-primary-light: #2c5282;
@@ -203,6 +203,13 @@ main {
     justify-content: center;
     color: var(--color-accent);
     font-size: 1.25rem;
+}
+
+.logo-img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    display: block;
 }
 
 .nav {

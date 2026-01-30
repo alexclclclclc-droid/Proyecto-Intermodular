@@ -42,7 +42,7 @@ $viewsPath = $inViews ? './' : './views/';
     <header class="header">
         <div class="container header-inner">
             <a href="<?= $basePath ?>index.php" class="logo">
-                <span class="logo-icon">🏠</span>
+                <img src="<?= $basePath ?>public/images/YAR.png" alt="Logo Apartamentos CyL" class="logo-img">
                 <span>Apartamentos<span class="text-accent">CyL</span></span>
             </a>
             
