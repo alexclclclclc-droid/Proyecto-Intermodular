@@ -677,7 +677,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inicializar módulo de apartamentos si existe el grid
     if (document.getElementById('apartamentos-grid')) {
         ApartamentosModule.init();
-        ApartamentosModule.loadApartamentos();
+        // Solo cargar automáticamente si no hay filtros predefinidos desde URL
+        // (los filtros desde URL se aplicarán desde el script en apartamentos.php)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.has('provincia') && !urlParams.has('municipio')) {
+            ApartamentosModule.loadApartamentos();
+        }
     }
 
     // Bindear eventos de modales

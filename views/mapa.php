@@ -152,6 +152,8 @@ async function loadMapMarkers(provincia = '') {
                             <div style="min-width: 200px;">
                                 <h4>${escapeHtml(apt.nombre)}</h4>
                                 <p>📍 ${escapeHtml(apt.municipio || '')}, ${escapeHtml(apt.provincia)}</p>
+                                ${apt.localidad ? `<p>📌 Localidad: ${escapeHtml(apt.localidad)}</p>` : ''}
+                                ${apt.nucleo ? `<p>🏘️ Núcleo: ${escapeHtml(apt.nucleo)}</p>` : ''}
                                 <p>👥 ${apt.capacidad_alojamiento || '?'} plazas</p>
                                 ${apt.accesible ? '<p>♿ Accesible</p>' : ''}
                                 <button onclick="ApartamentosModule.showDetail(${apt.id})" 

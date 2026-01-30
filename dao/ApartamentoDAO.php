@@ -151,8 +151,8 @@ class ApartamentoDAO {
         }
 
         if (!empty($filtros['municipio'])) {
-            $where[] = 'municipio LIKE :municipio';
-            $params[':municipio'] = '%' . $filtros['municipio'] . '%';
+            $where[] = 'municipio = :municipio';
+            $params[':municipio'] = $filtros['municipio'];
         }
 
         if (!empty($filtros['nombre'])) {
@@ -202,8 +202,8 @@ class ApartamentoDAO {
         }
 
         if (!empty($filtros['municipio'])) {
-            $where[] = 'municipio LIKE :municipio';
-            $params[':municipio'] = '%' . $filtros['municipio'] . '%';
+            $where[] = 'municipio = :municipio';
+            $params[':municipio'] = $filtros['municipio'];
         }
 
         if (!empty($filtros['nombre'])) {
@@ -296,7 +296,7 @@ class ApartamentoDAO {
             $params[':provincia'] = $filtros['provincia'];
         }
 
-        $sql = "SELECT id, nombre, provincia, municipio, gps_latitud, gps_longitud, 
+        $sql = "SELECT id, nombre, provincia, municipio, localidad, nucleo, gps_latitud, gps_longitud, 
                        capacidad_alojamiento, accesible 
                 FROM {$this->table} 
                 WHERE " . implode(' AND ', $where);

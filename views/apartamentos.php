@@ -107,18 +107,27 @@ include ROOT_PATH . 'views/partials/header.php';
 
 <script>
 // Si hay provincia en la URL, aplicarla al cargar
-document.addEventListener('DOMContentLoaded', () => {
-    const provinciaInicial = '<?= addslashes($provinciaInicial) ?>';
-    if (provinciaInicial) {
+const provinciaInicial = '<?= addslashes($provinciaInicial) ?>';
+if (provinciaInicial) {
+    // Establecer el filtro ANTES de que el módulo se inicialice completamente
+    document.addEventListener('DOMContentLoaded', () => {
+        // Establecer el filtro inmediatamente
         ApartamentosModule.currentFilters.provincia = provinciaInicial;
-        // Esperar a que se carguen las provincias para seleccionar
-        setTimeout(() => {
+        
+        // Esperar a que se carguen las provincias en el select
+        const checkProvinciasLoaded = setInterval(() => {
             const select = document.getElementById('filtro-provincia');
-            if (select) {
+            if (select && select.options.length > 1) { // Más de una opción = provincias cargadas
+                clearInterval(checkProvinciasLoaded);
                 select.value = provinciaInicial;
                 ApartamentosModule.loadMunicipios(provinciaInicial);
+                // Recargar apartamentos con el filtro aplicado
+                ApartamentosModule.loadApartamentos();
             }
-        }, 500);
-    }
-});
+        }, 100);
+        
+        // Timeout de seguridad de 3 segundos
+        setTimeout(() => clearInterval(checkProvinciasLoaded), 3000);
+    });
+}
 </script>
