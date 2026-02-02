@@ -7,10 +7,23 @@
 // FUNCIONES DE UTILIDAD
 // ===================================
 
-// Detectar la ruta base automáticamente
-const pathParts = window.location.pathname.split('/');
-const projectFolder = pathParts.length > 1 && pathParts[1] ? pathParts[1] : '';
-const API_BASE = (projectFolder ? '/' + projectFolder : '') + '/api';
+// Detectar la ruta base automáticamente - Versión mejorada
+const getBasePath = () => {
+    const path = window.location.pathname;
+    const parts = path.split('/').filter(p => p);
+    
+    // Detectar si estamos en subcarpetas
+    if (parts.includes('views')) {
+        if (parts.includes('admin')) {
+            return '../../api';  // Desde views/admin/
+        }
+        return '../api';  // Desde views/
+    }
+    
+    // Desde raíz del proyecto
+    return './api';
+};
+const API_BASE = getBasePath();
 
 /**
  * Realiza peticiones a la API con manejo de errores

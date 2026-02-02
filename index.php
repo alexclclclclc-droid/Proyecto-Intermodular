@@ -14,7 +14,7 @@ include ROOT_PATH . 'views/partials/header.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="/Proyecto-Intermodular/public/css/styles.css">
+    <link rel="stylesheet" href="./public/css/styles.css">
 </head>
 <body>
     
@@ -33,10 +33,10 @@ include ROOT_PATH . 'views/partials/header.php';
                 Desde las murallas de Ávila hasta las riberas del Duero, tu próxima escapada te espera.
             </p>
             <div class="hero-actions">
-                <a href="views/apartamentos.php" class="btn btn-accent btn-lg">
+                <a href="./views/apartamentos.php" class="btn btn-accent btn-lg">
                     Explorar apartamentos
                 </a>
-                <a href="views/mapa.php" class="btn btn-secondary btn-lg" style="border-color: white; color: white;">
+                <a href="./views/mapa.php" class="btn btn-secondary btn-lg" style="border-color: white; color: white;">
                     Ver en mapa
                 </a>
             </div>
@@ -93,7 +93,7 @@ include ROOT_PATH . 'views/partials/header.php';
             </div>
             
             <div class="text-center mt-2">
-                <a href="views/apartamentos.php" class="btn btn-primary btn-lg">
+                <a href="./views/apartamentos.php" class="btn btn-primary btn-lg">
                     Ver todos los apartamentos
                 </a>
             </div>
@@ -150,7 +150,7 @@ async function loadProvincias() {
             };
             
             container.innerHTML = response.data.map(p => `
-                <a href="views/apartamentos.php?provincia=${encodeURIComponent(p.provincia)}" class="provincia-card">
+                <a href="./views/apartamentos.php?provincia=${encodeURIComponent(p.provincia)}" class="provincia-card">
                     <span class="provincia-icon">${iconos[p.provincia] || '🏠'}</span>
                     <h3>${escapeHtml(p.provincia)}</h3>
                     <span class="provincia-count">${p.total} apartamentos</span>

@@ -202,6 +202,31 @@ try {
             ]);
             break;
 
+        // Gestión de usuarios - Ver detalle
+        case 'usuario_detalle':
+            $id = $_GET['id'] ?? null;
+            if (!$id) {
+                jsonResponse(['success' => false, 'error' => 'ID de usuario no proporcionado'], 400);
+            }
+            
+            $usuario = $usuarioDAO->obtenerPorId($id);
+            if (!$usuario) {
+                jsonResponse(['success' => false, 'error' => 'Usuario no encontrado'], 404);
+            }
+            
+            // Obtener estadísticas adicionales del usuario si es necesario
+            $reservaDAO = new ReservaDAO();
+            $totalReservas = $reservaDAO->contarReservasPorUsuario($id);
+            
+            $usuarioData = $usuario->toArray();
+            $usuarioData['total_reservas'] = $totalReservas;
+            
+            jsonResponse([
+                'success' => true,
+                'data' => $usuarioData
+            ]);
+            break;
+
         // Gestión de usuarios - Cambiar estado
         case 'usuario_cambiar_estado':
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

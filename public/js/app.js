@@ -7,10 +7,38 @@
 // CONFIGURACIÓN Y UTILIDADES
 // ===================================
 
-// Detectar la ruta base automáticamente
-const pathParts = window.location.pathname.split('/');
-const projectFolder = pathParts[1];
-const API_BASE = '/' + projectFolder + '/api';
+// Detectar la ruta base automáticamente - Versión mejorada
+const getBasePath = () => {
+    const path = window.location.pathname;
+    const parts = path.split('/').filter(p => p);
+    
+    // Detectar si estamos en subcarpetas
+    if (parts.includes('views')) {
+        if (parts.includes('admin')) {
+            return '../../api';  // Desde views/admin/
+        }
+        return '../api';  // Desde views/
+    }
+    
+    // Desde raíz del proyecto
+    return './api';
+};
+const API_BASE = getBasePath();
+
+// Helper para obtener la ruta correcta a index.php
+function getIndexPath() {
+    const path = window.location.pathname;
+    const parts = path.split('/').filter(p => p);
+    
+    if (parts.includes('views')) {
+        if (parts.includes('admin')) {
+            return '../../index.php';
+        }
+        return '../index.php';
+    }
+    return './index.php';
+}
+
 
 /**
  * Realiza peticiones a la API con manejo robusto de errores
@@ -803,8 +831,11 @@ const AuthModule = {
 
             if (response.success) {
                 showToast('¡Bienvenido!', 'success');
-                this.updateUI(true, response.data);
                 this.closeModal('modal-login');
+                // Recargar la página para actualizar el menú con los enlaces de admin/reservas
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
                 return true;
             }
         } catch (error) {
@@ -821,9 +852,10 @@ const AuthModule = {
             });
 
             if (response.success) {
-                showToast('Cuenta creada correctamente', 'success');
+                showToast('Cuenta creada correctamente. Iniciando sesión...', 'success');
                 this.closeModal('modal-registro');
-                this.openModal('modal-login');
+                // Hacer login automático
+                await this.login(formData.email, formData.password);
                 return true;
             }
         } catch (error) {
@@ -837,9 +869,12 @@ const AuthModule = {
             await apiRequest('auth.php?action=logout');
             showToast('Sesión cerrada', 'info');
             this.updateUI(false);
-            window.location.reload();
+            // Redirigir a index.php usando la función helper
+            window.location.href = getIndexPath();
         } catch (error) {
             console.error('Error en logout:', error);
+            // Incluso si hay error, redirigir a index
+            window.location.href = getIndexPath();
         }
     },
 

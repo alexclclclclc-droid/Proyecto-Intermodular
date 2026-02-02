@@ -332,4 +332,15 @@ class ReservaDAO {
         $stmt = $this->conn->prepare($sql);
         return $stmt->execute([':id' => $id]);
     }
+
+    /**
+     * Contar reservas por usuario
+     */
+    public function contarReservasPorUsuario(int $idUsuario): int {
+        $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE id_usuario = :id_usuario";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':id_usuario' => $idUsuario]);
+        $result = $stmt->fetch();
+        return (int)($result['total'] ?? 0);
+    }
 }

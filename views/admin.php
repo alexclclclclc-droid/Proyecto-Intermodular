@@ -2105,7 +2105,131 @@ function cambiarEstadoUsuario(id, nuevoEstado) {
 
 function verDetalleUsuario(id) {
     console.log('Ver detalle de usuario:', id);
-    mostrarToast('Función de detalle de usuario en desarrollo', 'info');
+    
+    const pathParts = window.location.pathname.split('/');
+    const projectFolder = pathParts[1];
+    const apiUrl = `/${projectFolder}/api/admin.php?action=usuario_detalle&id=${id}`;
+    
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const usuario = data.data;
+                
+                // Crear contenido del modal
+                const modalContent = `
+                    <div style="padding: 20px;">
+                        <h3 style="margin-bottom: 20px; color: #1e293b;">Detalles del Usuario</h3>
+                        
+                        <div style="display: grid; gap: 15px;">
+                            <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                                <strong style="color: #64748b; font-size: 0.875rem;">ID:</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 1rem;">${usuario.id}</p>
+                            </div>
+                            
+                            <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                                <strong style="color: #64748b; font-size: 0.875rem;">Nombre Completo:</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 1rem;">${usuario.nombre} ${usuario.apellidos || ''}</p>
+                            </div>
+                            
+                            <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                                <strong style="color: #64748b; font-size: 0.875rem;">Email:</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 1rem;">${usuario.email}</p>
+                            </div>
+                            
+                            ${usuario.telefono ? `
+                            <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                                <strong style="color: #64748b; font-size: 0.875rem;">Teléfono:</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 1rem;">${usuario.telefono}</p>
+                            </div>
+                            ` : ''}
+                            
+                            <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                                <strong style="color: #64748b; font-size: 0.875rem;">Rol:</strong>
+                                <p style="margin: 5px 0 0 0;">
+                                    <span class="badge ${usuario.rol === 'admin' ? 'badge-info' : 'badge-success'}">
+                                        ${usuario.rol === 'admin' ? 'Administrador' : 'Usuario'}
+                                    </span>
+                                </p>
+                            </div>
+                            
+                            <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                                <strong style="color: #64748b; font-size: 0.875rem;">Estado:</strong>
+                                <p style="margin: 5px 0 0 0;">
+                                    <span class="badge ${usuario.activo ? 'badge-success' : 'badge-danger'}">
+                                        ${usuario.activo ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </p>
+                            </div>
+                            
+                            <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                                <strong style="color: #64748b; font-size: 0.875rem;">Fecha de Registro:</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 1rem;">${new Date(usuario.fecha_registro).toLocaleString('es-ES')}</p>
+                            </div>
+                            
+                            ${usuario.ultima_sesion ? `
+                            <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                                <strong style="color: #64748b; font-size: 0.875rem;">Última Sesión:</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 1rem;">${new Date(usuario.ultima_sesion).toLocaleString('es-ES')}</p>
+                            </div>
+                            ` : ''}
+                            
+                            ${usuario.total_reservas !== undefined ? `
+                            <div style="padding-bottom: 10px;">
+                                <strong style="color: #64748b; font-size: 0.875rem;">Total de Reservas:</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 1.5rem; color: #2563eb; font-weight: 600;">${usuario.total_reservas || 0}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div style="margin-top: 20px; text-align: right;">
+                            <button class="btn btn-secondary" onclick="cerrarModalDetalleUsuario()">Cerrar</button>
+                        </div>
+                    </div>
+                `;
+                
+                // Crear o actualizar modal
+                let modal = document.getElementById('modal-detalle-usuario');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'modal-detalle-usuario';
+                    modal.className = 'modal-overlay';
+                    modal.innerHTML = `
+                        <div class="modal" style="max-width: 600px;">
+                            <div class="modal-header">
+                                <h3 class="modal-title">Información del Usuario</h3>
+                                <button class="modal-close" onclick="cerrarModalDetalleUsuario()">&times;</button>
+                            </div>
+                            <div class="modal-body" id="modal-detalle-usuario-body">
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                }
+                
+                // Actualizar contenido
+                document.getElementById('modal-detalle-usuario-body').innerHTML = modalContent;
+                
+                // Mostrar modal
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                
+            } else {
+                mostrarToast('Error al cargar detalles del usuario: ' + (data.error || 'Datos no encontrados'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarToast('Error al cargar detalles del usuario', 'error');
+        });
+}
+
+function cerrarModalDetalleUsuario() {
+    const modal = document.getElementById('modal-detalle-usuario');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
 }
 
 function eliminarUsuario(id) {
