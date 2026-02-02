@@ -32,7 +32,7 @@ CREATE TABLE apartamentos (
     email VARCHAR(255),
     web VARCHAR(500),
     q_calidad BOOLEAN DEFAULT FALSE,
-    plazas INT DEFAULT 0,
+    plazas INT DEFAULT 0, 
     categoria VARCHAR(100),
     especialidades TEXT,
     gps_latitud DECIMAL(10, 7),
