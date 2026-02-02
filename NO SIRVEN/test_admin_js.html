@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin JavaScript Functions</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .test-button { margin: 5px; padding: 10px 15px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .test-button:hover { background: #0056b3; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-left: 4px solid #007bff; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .success { border-left-color: #28a745; background: #d4edda; }
+    </style>
+</head>
+<body>
+    <h1>Admin Panel JavaScript Functions Test</h1>
+    
+    <div class="test-section">
+        <h2>Test User Management Functions</h2>
+        <button class="test-button" onclick="testCambiarRolUsuario()">Test Change User Role</button>
+        <button class="test-button" onclick="testCambiarEstadoUsuario()">Test Change User Status</button>
+        <button class="test-button" onclick="testEliminarUsuario()">Test Delete User</button>
+        <div id="user-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Reservation Management Functions</h2>
+        <button class="test-button" onclick="testCambiarEstadoReserva()">Test Change Reservation Status</button>
+        <button class="test-button" onclick="testEliminarReserva()">Test Delete Reservation</button>
+        <div id="reservation-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test API Connectivity</h2>
+        <button class="test-button" onclick="testApiConnection()">Test API Connection</button>
+        <div id="api-results"></div>
+    </div>
+
+    <script>
+        // Simulate the admin functions from admin.php
+        function mostrarToast(mensaje, tipo = 'info') {
+            console.log(`Toast [${tipo}]: ${mensaje}`);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${tipo === 'error' ? 'error' : 'success'}`;
+            resultDiv.textContent = `Toast: ${mensaje}`;
+            return resultDiv;
+        }
+
+        function testCambiarRolUsuario() {
+            const resultsDiv = document.getElementById('user-results');
+            resultsDiv.innerHTML = '';
+            
+            const testUserId = 2;
+            const newRole = 'admin';
+            
+            console.log('Testing cambiarRolUsuario:', testUserId, 'to', newRole);
+            
+            const pathParts = window.location.pathname.split('/');
+            const projectFolder = pathParts[1] || 'apartamentos_cyl';
+            const apiUrl = `/${projectFolder}/api/admin.php`;
+            
+            resultsDiv.appendChild(mostrarToast(`Testing role change for user ${testUserId} to ${newRole}`, 'info'));
+            
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'usuario_cambiar_rol',
+                    id: testUserId,
+                    rol: newRole
+                })
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    resultsDiv.appendChild(mostrarToast('Role change successful: ' + data.message, 'success'));
+                } else {
+                    resultsDiv.appendChild(mostrarToast('Role change failed: ' + data.error, 'error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultsDiv.appendChild(mostrarToast('Network error: ' + error.message, 'error'));
+            });
+        }
+
+        function testCambiarEstadoUsuario() {
+            const resultsDiv = document.getElementById('user-results');
+            
+            const testUserId = 2;
+            const newStatus = false; // deactivate
+            
+            console.log('Testing cambiarEstadoUsuario:', testUserId, 'to', newStatus ? 'active' : 'inactive');
+            
+            const pathParts = window.location.pathname.split('/');
+            const projectFolder = pathParts[1] || 'apartamentos_cyl';
+            const apiUrl = `/${projectFolder}/api/admin.php`;
+            
+            resultsDiv.appendChild(mostrarToast(`Testing status change for user ${testUserId} to ${newStatus ? 'active' : 'inactive'}`, 'info'));
+            
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'usuario_cambiar_estado',
+                    id: testUserId,
+                    activo: newStatus
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultsDiv.appendChild(mostrarToast('Status change successful: ' + data.message, 'success'));
+                } else {
+                    resultsDiv.appendChild(mostrarToast('Status change failed: ' + data.error, 'error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultsDiv.appendChild(mostrarToast('Network error: ' + error.message, 'error'));
+            });
+        }
+
+        function testEliminarUsuario() {
+            const resultsDiv = document.getElementById('user-results');
+            
+            // Don't actually delete, just test the API call structure
+            resultsDiv.appendChild(mostrarToast('Delete user test skipped (would be destructive)', 'info'));
+        }
+
+        function testCambiarEstadoReserva() {
+            const resultsDiv = document.getElementById('reservation-results');
+            resultsDiv.innerHTML = '';
+            
+            const testReservationId = 1;
+            const newStatus = 'confirmada';
+            
+            console.log('Testing cambiarEstadoReserva:', testReservationId, 'to', newStatus);
+            
+            const pathParts = window.location.pathname.split('/');
+            const projectFolder = pathParts[1] || 'apartamentos_cyl';
+            const apiUrl = `/${projectFolder}/api/admin.php`;
+            
+            resultsDiv.appendChild(mostrarToast(`Testing status change for reservation ${testReservationId} to ${newStatus}`, 'info'));
+            
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'reserva_cambiar_estado',
+                    id: testReservationId,
+                    estado: newStatus
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultsDiv.appendChild(mostrarToast('Reservation status change successful: ' + data.message, 'success'));
+                } else {
+                    resultsDiv.appendChild(mostrarToast('Reservation status change failed: ' + data.error, 'error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultsDiv.appendChild(mostrarToast('Network error: ' + error.message, 'error'));
+            });
+        }
+
+        function testEliminarReserva() {
+            const resultsDiv = document.getElementById('reservation-results');
+            
+            // Don't actually delete, just test the API call structure
+            resultsDiv.appendChild(mostrarToast('Delete reservation test skipped (would be destructive)', 'info'));
+        }
+
+        function testApiConnection() {
+            const resultsDiv = document.getElementById('api-results');
+            resultsDiv.innerHTML = '';
+            
+            const pathParts = window.location.pathname.split('/');
+            const projectFolder = pathParts[1] || 'apartamentos_cyl';
+            const apiUrl = `/${projectFolder}/api/admin.php?action=estadisticas`;
+            
+            resultsDiv.appendChild(mostrarToast('Testing API connection...', 'info'));
+            
+            fetch(apiUrl)
+                .then(response => {
+                    console.log('API Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Response data:', data);
+                    if (data.success) {
+                        resultsDiv.appendChild(mostrarToast('API connection successful! Got statistics data.', 'success'));
+                        resultsDiv.appendChild(mostrarToast(`Users: ${data.data.usuarios.total}, Reservations: ${data.data.reservas.total}`, 'info'));
+                    } else {
+                        resultsDiv.appendChild(mostrarToast('API returned error: ' + data.error, 'error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('API Error:', error);
+                    resultsDiv.appendChild(mostrarToast('API connection failed: ' + error.message, 'error'));
+                });
+        }
+
+        // Auto-test API connection on load
+        window.addEventListener('load', function() {
+            setTimeout(testApiConnection, 1000);
+        });
+    </script>
+</body>
+</html>

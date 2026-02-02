@@ -233,6 +233,11 @@ include ROOT_PATH . 'views/partials/header.php';
                     <input type="date" id="filtro-reserva-fecha-hasta" class="form-input">
                 </div>
                 
+                <div class="admin-filter-group">
+                    <label for="filtro-reserva-usuario-email">Email Usuario:</label>
+                    <input type="text" id="filtro-reserva-usuario-email" class="form-input" placeholder="Buscar por email...">
+                </div>
+                
                 <button id="btn-limpiar-filtros-reservas" class="btn btn-secondary">
                     Limpiar filtros
                 </button>
@@ -319,9 +324,9 @@ include ROOT_PATH . 'views/partials/header.php';
     </main>
 </div>
 
-<!-- Modal de confirmación -->
+<!-- Modal de confirmación/detalle -->
 <div id="modal-confirmacion" class="modal-overlay">
-    <div class="modal">
+    <div class="modal" style="max-width: 600px;">
         <div class="modal-header">
             <h3 class="modal-title">Confirmar Acción</h3>
             <button class="modal-close" data-modal-close>&times;</button>
@@ -331,6 +336,59 @@ include ROOT_PATH . 'views/partials/header.php';
         </div>
         <div class="modal-footer">
             <button id="btn-confirmar-accion" class="btn btn-danger">Confirmar</button>
+            <button class="btn btn-secondary" data-modal-close>Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar usuario -->
+<div id="modal-editar-usuario" class="modal-overlay">
+    <div class="modal" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3 class="modal-title">Editar Usuario</h3>
+            <button class="modal-close" data-modal-close>&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="form-editar-usuario">
+                <input type="hidden" id="edit-usuario-id">
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit-usuario-nombre">Nombre:</label>
+                    <input type="text" id="edit-usuario-nombre" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit-usuario-apellidos">Apellidos:</label>
+                    <input type="text" id="edit-usuario-apellidos" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit-usuario-email">Email:</label>
+                    <input type="email" id="edit-usuario-email" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit-usuario-telefono">Teléfono:</label>
+                    <input type="tel" id="edit-usuario-telefono" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit-usuario-rol">Rol:</label>
+                    <select id="edit-usuario-rol" class="form-select">
+                        <option value="usuario">Usuario</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="edit-usuario-activo"> Usuario activo
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button id="btn-guardar-usuario" class="btn btn-primary">Guardar Cambios</button>
             <button class="btn btn-secondary" data-modal-close>Cancelar</button>
         </div>
     </div>
@@ -834,6 +892,169 @@ include ROOT_PATH . 'views/partials/header.php';
     .admin-dashboard-grid {
         grid-template-columns: 1fr;
     }
+    
+    .admin-table-container {
+        overflow-x: auto;
+    }
+    
+    .admin-table {
+        min-width: 800px;
+    }
+}
+
+/* Mejoras adicionales */
+.form-group {
+    margin-bottom: var(--space-md);
+}
+
+.form-label {
+    display: block;
+    margin-bottom: var(--space-xs);
+    font-weight: 500;
+    color: var(--color-text);
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+}
+
+.form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    border: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #4b5563;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: #059669;
+}
+
+.btn-warning {
+    background: var(--color-accent);
+    color: white;
+}
+
+.btn-warning:hover:not(:disabled) {
+    background: #d97706;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #dc2626;
+}
+
+.btn-info {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-info:hover:not(:disabled) {
+    background: #2563eb;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+}
+
+.btn-ghost:hover:not(:disabled) {
+    background: var(--color-bg-alt);
+}
+
+/* Loading states */
+.loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Mejoras para tablas */
+.admin-table tbody tr:hover {
+    background: var(--color-bg-alt);
+}
+
+.admin-table select {
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* Estados de filtros */
+.admin-filters.has-filters {
+    border-left: 4px solid var(--color-primary);
+}
+
+.filter-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    margin-left: var(--space-xs);
 }
 </style>
 
@@ -907,7 +1128,7 @@ function cargarDashboard() {
     
     // Detectar la ruta base automáticamente
     const pathParts = window.location.pathname.split('/');
-    const projectFolder = pathParts[1]; // Proyecto-Intermodular
+    const projectFolder = pathParts[1];
     const apiUrl = `/${projectFolder}/api/admin.php?action=estadisticas`;
     
     console.log('URL de API Dashboard:', apiUrl);
@@ -916,6 +1137,9 @@ function cargarDashboard() {
     fetch(apiUrl)
         .then(response => {
             console.log('Respuesta Dashboard:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
             return response.json();
         })
         .then(data => {
@@ -934,8 +1158,12 @@ function cargarDashboard() {
                     const elemento = document.getElementById(id);
                     if (elemento) {
                         elemento.textContent = valor;
+                        console.log(`Actualizado ${id}: ${valor}`);
                     }
                 });
+                
+                // Actualizar gráficos con datos reales
+                actualizarGraficos(data.data);
                 
                 mostrarToast('Dashboard cargado con datos reales', 'success');
             } else {
@@ -944,7 +1172,7 @@ function cargarDashboard() {
         })
         .catch(error => {
             console.error('Error cargando dashboard:', error);
-            mostrarToast('Error al cargar dashboard real, usando datos de ejemplo', 'warning');
+            mostrarToast('Error al cargar dashboard: ' + error.message, 'error');
             // Fallback a datos de ejemplo
             cargarDashboardEjemplo();
         });
@@ -976,61 +1204,191 @@ function cargarDashboardEjemplo() {
     mostrarToast('Dashboard cargado con datos de ejemplo', 'info');
 }
 
+function actualizarGraficos(data) {
+    // Actualizar gráfico de usuarios por rol
+    const chartUsuarios = document.getElementById('chart-usuarios-rol');
+    if (chartUsuarios && data.usuarios.por_rol) {
+        const roles = Object.entries(data.usuarios.por_rol);
+        chartUsuarios.innerHTML = roles.map(([rol, cantidad]) => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="text-transform: capitalize;">${rol}:</span>
+                <strong>${cantidad}</strong>
+            </div>
+        `).join('');
+    }
+    
+    // Actualizar gráfico de reservas por estado
+    const chartReservas = document.getElementById('chart-reservas-estado');
+    if (chartReservas && data.reservas.por_estado) {
+        const estados = Object.entries(data.reservas.por_estado);
+        chartReservas.innerHTML = estados.map(([estado, cantidad]) => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="text-transform: capitalize;">${estado}:</span>
+                <strong>${cantidad}</strong>
+            </div>
+        `).join('');
+    }
+    
+    // Actualizar actividad reciente con datos reales
+    const actividadContainer = document.getElementById('actividad-reciente');
+    if (actividadContainer) {
+        const actividades = [];
+        
+        if (data.usuarios.total > 0) {
+            actividades.push({
+                icon: '👤',
+                texto: `${data.usuarios.total} usuarios registrados`,
+                tiempo: 'Datos actuales'
+            });
+        }
+        
+        if (data.reservas.total > 0) {
+            actividades.push({
+                icon: '📅',
+                texto: `${data.reservas.total} reservas en el sistema`,
+                tiempo: 'Datos actuales'
+            });
+        }
+        
+        if (data.apartamentos && data.apartamentos.ocupados > 0) {
+            actividades.push({
+                icon: '🏠',
+                texto: `${data.apartamentos.ocupados} apartamentos ocupados hoy`,
+                tiempo: 'Hoy'
+            });
+        }
+        
+        if (data.apartamentos && data.apartamentos.disponibles > 0) {
+            actividades.push({
+                icon: '🏡',
+                texto: `${data.apartamentos.disponibles} apartamentos disponibles`,
+                tiempo: 'Hoy'
+            });
+        }
+        
+        if (data.reservas.este_mes > 0) {
+            actividades.push({
+                icon: '📈',
+                texto: `${data.reservas.este_mes} reservas este mes`,
+                tiempo: 'Mes actual'
+            });
+        }
+        
+        // Si no hay actividades, mostrar mensaje por defecto
+        if (actividades.length === 0) {
+            actividades.push({
+                icon: '📊',
+                texto: 'Sistema inicializado',
+                tiempo: 'Hoy'
+            });
+        }
+        
+        // Mostrar solo las primeras 4 actividades para no sobrecargar
+        const actividadesLimitadas = actividades.slice(0, 4);
+        
+        actividadContainer.innerHTML = actividadesLimitadas.map(actividad => `
+            <div class="admin-activity-item">
+                <span class="admin-activity-icon">${actividad.icon}</span>
+                <span class="admin-activity-text">${actividad.texto}</span>
+                <span class="admin-activity-time">${actividad.tiempo}</span>
+            </div>
+        `).join('');
+    }
+}
+
 function cargarUsuarios() {
     console.log('Cargando usuarios...');
     
     // Detectar la ruta base automáticamente
     const pathParts = window.location.pathname.split('/');
-    const projectFolder = pathParts[1]; // Proyecto-Intermodular
-    const apiUrl = `/${projectFolder}/api/admin.php?action=usuarios_listar`;
+    const projectFolder = pathParts[1];
     
-    console.log('URL de API:', apiUrl);
+    // Obtener filtros
+    const filtros = {
+        rol: document.getElementById('filtro-usuario-rol')?.value || '',
+        estado: document.getElementById('filtro-usuario-estado')?.value || '',
+        email: document.getElementById('filtro-usuario-email')?.value || ''
+    };
+    
+    // Construir URL con filtros
+    const params = new URLSearchParams({ action: 'usuarios_listar' });
+    Object.entries(filtros).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+    });
+    
+    const apiUrl = `/${projectFolder}/api/admin.php?${params.toString()}`;
+    console.log('URL de API Usuarios:', apiUrl);
+    
+    // Mostrar indicador de carga
+    const tbody = document.querySelector('#tabla-usuarios tbody');
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">Cargando usuarios...</td></tr>';
+    }
     
     // Intentar cargar datos reales de la API
     fetch(apiUrl)
         .then(response => {
-            console.log('Respuesta recibida:', response.status);
+            console.log('Respuesta Usuarios:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
             return response.json();
         })
         .then(data => {
-            console.log('Datos recibidos:', data);
+            console.log('Datos Usuarios:', data);
             
             if (data.success) {
                 // Renderizar usuarios reales
-                const tbody = document.querySelector('#tabla-usuarios tbody');
                 if (tbody) {
-                    tbody.innerHTML = data.data.map(usuario => `
-                        <tr>
-                            <td>${usuario.id}</td>
-                            <td>${usuario.email}</td>
-                            <td>${usuario.nombre} ${usuario.apellidos || ''}</td>
-                            <td>
-                                <span class="badge ${usuario.rol === 'admin' ? 'badge-info' : 'badge-success'}">
-                                    ${usuario.rol}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge ${usuario.activo ? 'badge-success' : 'badge-danger'}">
-                                    ${usuario.activo ? 'Activo' : 'Inactivo'}
-                                </span>
-                            </td>
-                            <td>${usuario.fecha_registro ? usuario.fecha_registro.split(' ')[0] : 'N/A'}</td>
-                            <td>
-                                <button class="btn btn-sm btn-warning">Editar</button>
-                                <button class="btn btn-sm btn-danger">Eliminar</button>
-                            </td>
-                        </tr>
-                    `).join('');
+                    if (data.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #666;">No se encontraron usuarios con los filtros aplicados</td></tr>';
+                    } else {
+                        tbody.innerHTML = data.data.map(usuario => `
+                            <tr>
+                                <td>${usuario.id}</td>
+                                <td>${usuario.email}</td>
+                                <td>${usuario.nombre} ${usuario.apellidos || ''}</td>
+                                <td>
+                                    <select class="form-select" style="width: auto;" onchange="cambiarRolUsuario(${usuario.id}, this.value)">
+                                        <option value="">Cambiar rol...</option>
+                                        <option value="usuario" ${usuario.rol === 'usuario' ? 'selected' : ''}>Usuario</option>
+                                        <option value="admin" ${usuario.rol === 'admin' ? 'selected' : ''}>Admin</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm ${usuario.activo ? 'btn-success' : 'btn-danger'}" 
+                                            onclick="cambiarEstadoUsuario(${usuario.id}, ${!usuario.activo})" 
+                                            title="Click para ${usuario.activo ? 'desactivar' : 'activar'} usuario">
+                                        ${usuario.activo ? 'Activo' : 'Inactivo'}
+                                    </button>
+                                </td>
+                                <td>${usuario.fecha_registro ? usuario.fecha_registro.split(' ')[0] : 'N/A'}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="verDetalleUsuario(${usuario.id})">Ver</button>
+                                    <button class="btn btn-sm btn-danger" onclick="eliminarUsuario(${usuario.id})" 
+                                            ${usuario.id === getCurrentUserId() ? 'disabled title="No puedes eliminarte a ti mismo"' : ''}>
+                                        Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('');
+                    }
                 }
                 
-                mostrarToast(`Usuarios cargados: ${data.data.length} encontrados`, 'success');
+                const filtrosAplicados = data.filtros_aplicados || {};
+                const numFiltros = Object.keys(filtrosAplicados).length;
+                const mensaje = numFiltros > 0 
+                    ? `Usuarios cargados: ${data.data.length} encontrados (${numFiltros} filtro(s) aplicado(s))`
+                    : `Usuarios cargados: ${data.data.length} encontrados`;
+                
+                mostrarToast(mensaje, 'success');
             } else {
                 throw new Error(data.error || 'Error al cargar usuarios');
             }
         })
         .catch(error => {
             console.error('Error cargando usuarios:', error);
-            mostrarToast('Error al cargar usuarios reales, usando datos de ejemplo', 'warning');
+            mostrarToast('Error al cargar usuarios: ' + error.message, 'error');
             // Fallback a datos de ejemplo
             cargarUsuariosEjemplo();
         });
@@ -1101,15 +1459,38 @@ function cargarReservas() {
     
     // Detectar la ruta base automáticamente
     const pathParts = window.location.pathname.split('/');
-    const projectFolder = pathParts[1]; // Proyecto-Intermodular
-    const apiUrl = `/${projectFolder}/api/admin.php?action=reservas_listar`;
+    const projectFolder = pathParts[1];
     
+    // Obtener filtros
+    const filtros = {
+        estado: document.getElementById('filtro-reserva-estado')?.value || '',
+        fecha_desde: document.getElementById('filtro-reserva-fecha-desde')?.value || '',
+        fecha_hasta: document.getElementById('filtro-reserva-fecha-hasta')?.value || '',
+        usuario_email: document.getElementById('filtro-reserva-usuario-email')?.value || ''
+    };
+    
+    // Construir URL con filtros
+    const params = new URLSearchParams({ action: 'reservas_listar' });
+    Object.entries(filtros).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+    });
+    
+    const apiUrl = `/${projectFolder}/api/admin.php?${params.toString()}`;
     console.log('URL de API Reservas:', apiUrl);
+    
+    // Mostrar indicador de carga
+    const tbody = document.querySelector('#tabla-reservas tbody');
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">Cargando reservas...</td></tr>';
+    }
     
     // Intentar cargar datos reales de la API
     fetch(apiUrl)
         .then(response => {
             console.log('Respuesta Reservas:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
             return response.json();
         })
         .then(data => {
@@ -1117,36 +1498,50 @@ function cargarReservas() {
             
             if (data.success) {
                 // Renderizar reservas reales
-                const tbody = document.querySelector('#tabla-reservas tbody');
                 if (tbody) {
-                    tbody.innerHTML = data.data.map(reserva => `
-                        <tr>
-                            <td>${reserva.id}</td>
-                            <td>${reserva.usuario_email || 'N/A'}</td>
-                            <td>${reserva.apartamento_nombre || 'N/A'}</td>
-                            <td>${reserva.fecha_entrada}</td>
-                            <td>${reserva.fecha_salida}</td>
-                            <td>
-                                <span class="badge ${getBadgeClass(reserva.estado)}">
-                                    ${reserva.estado}
-                                </span>
-                            </td>
-                            <td>${reserva.fecha_creacion ? reserva.fecha_creacion.split(' ')[0] : 'N/A'}</td>
-                            <td>
-                                <button class="btn btn-sm btn-info">Ver Detalle</button>
-                            </td>
-                        </tr>
-                    `).join('');
+                    if (data.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #666;">No se encontraron reservas con los filtros aplicados</td></tr>';
+                    } else {
+                        tbody.innerHTML = data.data.map(reserva => `
+                            <tr>
+                                <td>${reserva.id}</td>
+                                <td>${reserva.usuario_email || 'N/A'}</td>
+                                <td>${reserva.apartamento_nombre || 'N/A'}</td>
+                                <td>${reserva.fecha_entrada}</td>
+                                <td>${reserva.fecha_salida}</td>
+                                <td>
+                                    <select class="form-select" style="width: auto;" onchange="cambiarEstadoReserva(${reserva.id}, this.value)">
+                                        <option value="">Cambiar estado...</option>
+                                        <option value="pendiente" ${reserva.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+                                        <option value="confirmada" ${reserva.estado === 'confirmada' ? 'selected' : ''}>Confirmada</option>
+                                        <option value="cancelada" ${reserva.estado === 'cancelada' ? 'selected' : ''}>Cancelada</option>
+                                        <option value="completada" ${reserva.estado === 'completada' ? 'selected' : ''}>Completada</option>
+                                    </select>
+                                </td>
+                                <td>${reserva.fecha_creacion ? reserva.fecha_creacion.split(' ')[0] : 'N/A'}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="verDetalleReserva(${reserva.id})">Ver</button>
+                                    <button class="btn btn-sm btn-danger" onclick="eliminarReserva(${reserva.id})">Eliminar</button>
+                                </td>
+                            </tr>
+                        `).join('');
+                    }
                 }
                 
-                mostrarToast(`Reservas cargadas: ${data.data.length} encontradas`, 'success');
+                const filtrosAplicados = data.filtros_aplicados || {};
+                const numFiltros = Object.keys(filtrosAplicados).length;
+                const mensaje = numFiltros > 0 
+                    ? `Reservas cargadas: ${data.data.length} encontradas (${numFiltros} filtro(s) aplicado(s))`
+                    : `Reservas cargadas: ${data.data.length} encontradas`;
+                
+                mostrarToast(mensaje, 'success');
             } else {
                 throw new Error(data.error || 'Error al cargar reservas');
             }
         })
         .catch(error => {
             console.error('Error cargando reservas:', error);
-            mostrarToast('Error al cargar reservas reales, usando datos de ejemplo', 'warning');
+            mostrarToast('Error al cargar reservas: ' + error.message, 'error');
             // Fallback a datos de ejemplo
             cargarReservasEjemplo();
         });
@@ -1239,10 +1634,20 @@ function cargarSincronizacion() {
 
 // Función para mostrar notificaciones
 function mostrarToast(mensaje, tipo = 'info') {
+    console.log(`Mostrando toast [${tipo}]: ${mensaje}`);
+    
     const toast = document.createElement('div');
     toast.className = `toast toast-${tipo}`;
+    
+    const iconMap = {
+        'info': 'ℹ️',
+        'success': '✅',
+        'error': '❌',
+        'warning': '⚠️'
+    };
+    
     toast.innerHTML = `
-        <span class="toast-icon">${tipo === 'info' ? 'ℹ' : '✓'}</span>
+        <span class="toast-icon">${iconMap[tipo] || 'ℹ️'}</span>
         <span class="toast-message">${mensaje}</span>
     `;
     
@@ -1254,8 +1659,12 @@ function mostrarToast(mensaje, tipo = 'info') {
     
     setTimeout(() => {
         toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 300);
+    }, 4000);
 }
 
 // Inicializar cuando el DOM esté listo
@@ -1286,11 +1695,494 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Configurar eventos de filtros para usuarios
+    const filtroUsuarioRol = document.getElementById('filtro-usuario-rol');
+    const filtroUsuarioEstado = document.getElementById('filtro-usuario-estado');
+    const filtroUsuarioEmail = document.getElementById('filtro-usuario-email');
+    const btnLimpiarUsuarios = document.getElementById('btn-limpiar-filtros-usuarios');
+    
+    if (filtroUsuarioRol) {
+        filtroUsuarioRol.addEventListener('change', () => {
+            console.log('Filtro rol cambiado:', filtroUsuarioRol.value);
+            cargarUsuarios();
+        });
+    }
+    
+    if (filtroUsuarioEstado) {
+        filtroUsuarioEstado.addEventListener('change', () => {
+            console.log('Filtro estado cambiado:', filtroUsuarioEstado.value);
+            cargarUsuarios();
+        });
+    }
+    
+    if (filtroUsuarioEmail) {
+        // Debounce para el filtro de email
+        let timeoutEmail;
+        filtroUsuarioEmail.addEventListener('input', () => {
+            clearTimeout(timeoutEmail);
+            timeoutEmail = setTimeout(() => {
+                console.log('Filtro email cambiado:', filtroUsuarioEmail.value);
+                cargarUsuarios();
+            }, 500);
+        });
+    }
+    
+    if (btnLimpiarUsuarios) {
+        btnLimpiarUsuarios.addEventListener('click', () => {
+            if (filtroUsuarioRol) filtroUsuarioRol.value = '';
+            if (filtroUsuarioEstado) filtroUsuarioEstado.value = '';
+            if (filtroUsuarioEmail) filtroUsuarioEmail.value = '';
+            cargarUsuarios();
+        });
+    }
+    
+    // Configurar eventos de filtros para reservas
+    const filtroReservaEstado = document.getElementById('filtro-reserva-estado');
+    const filtroReservaFechaDesde = document.getElementById('filtro-reserva-fecha-desde');
+    const filtroReservaFechaHasta = document.getElementById('filtro-reserva-fecha-hasta');
+    const filtroReservaUsuarioEmail = document.getElementById('filtro-reserva-usuario-email');
+    const btnLimpiarReservas = document.getElementById('btn-limpiar-filtros-reservas');
+    
+    if (filtroReservaEstado) {
+        filtroReservaEstado.addEventListener('change', () => {
+            console.log('Filtro estado reserva cambiado:', filtroReservaEstado.value);
+            cargarReservas();
+        });
+    }
+    
+    if (filtroReservaFechaDesde) {
+        filtroReservaFechaDesde.addEventListener('change', () => {
+            console.log('Filtro fecha desde cambiado:', filtroReservaFechaDesde.value);
+            cargarReservas();
+        });
+    }
+    
+    if (filtroReservaFechaHasta) {
+        filtroReservaFechaHasta.addEventListener('change', () => {
+            console.log('Filtro fecha hasta cambiado:', filtroReservaFechaHasta.value);
+            cargarReservas();
+        });
+    }
+    
+    if (filtroReservaUsuarioEmail) {
+        // Debounce para el filtro de email de usuario
+        let timeoutUsuarioEmail;
+        filtroReservaUsuarioEmail.addEventListener('input', () => {
+            clearTimeout(timeoutUsuarioEmail);
+            timeoutUsuarioEmail = setTimeout(() => {
+                console.log('Filtro email usuario cambiado:', filtroReservaUsuarioEmail.value);
+                cargarReservas();
+            }, 500);
+        });
+    }
+    
+    if (btnLimpiarReservas) {
+        btnLimpiarReservas.addEventListener('click', () => {
+            if (filtroReservaEstado) filtroReservaEstado.value = '';
+            if (filtroReservaFechaDesde) filtroReservaFechaDesde.value = '';
+            if (filtroReservaFechaHasta) filtroReservaFechaHasta.value = '';
+            if (filtroReservaUsuarioEmail) filtroReservaUsuarioEmail.value = '';
+            cargarReservas();
+        });
+    }
+    
     // Cargar dashboard por defecto
     setTimeout(() => {
         cambiarSeccion('dashboard');
     }, 100);
     
     console.log('Panel admin inicializado correctamente');
+    
+    // Add debug functions to window for testing
+    window.debugAdmin = {
+        testCambiarRolUsuario: function(id = 2, rol = 'usuario') {
+            console.log('Testing cambiarRolUsuario with id:', id, 'rol:', rol);
+            cambiarRolUsuario(id, rol);
+        },
+        testCambiarEstadoUsuario: function(id = 2, estado = false) {
+            console.log('Testing cambiarEstadoUsuario with id:', id, 'estado:', estado);
+            cambiarEstadoUsuario(id, estado);
+        },
+        testCambiarEstadoReserva: function(id = 1, estado = 'confirmada') {
+            console.log('Testing cambiarEstadoReserva with id:', id, 'estado:', estado);
+            cambiarEstadoReserva(id, estado);
+        },
+        testToast: function(mensaje = 'Test message', tipo = 'info') {
+            console.log('Testing toast with mensaje:', mensaje, 'tipo:', tipo);
+            mostrarToast(mensaje, tipo);
+        },
+        recargarUsuarios: function() {
+            console.log('Recargando usuarios...');
+            cargarUsuarios();
+        },
+        recargarReservas: function() {
+            console.log('Recargando reservas...');
+            cargarReservas();
+        },
+        testApiUrl: function() {
+            const pathParts = window.location.pathname.split('/');
+            const projectFolder = pathParts[1];
+            const apiUrl = `/${projectFolder}/api/admin.php`;
+            console.log('Current URL:', window.location.href);
+            console.log('Path parts:', pathParts);
+            console.log('Project folder:', projectFolder);
+            console.log('API URL:', apiUrl);
+            return apiUrl;
+        },
+        testDebugApi: async function() {
+            const pathParts = window.location.pathname.split('/');
+            const projectFolder = pathParts[1];
+            const debugUrl = `/${projectFolder}/debug_admin_api.php`;
+            console.log('Testing debug API at:', debugUrl);
+            
+            try {
+                const response = await fetch(debugUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'test_action',
+                        test_data: 'hello world'
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('Debug API response:', data);
+                return data;
+            } catch (error) {
+                console.error('Debug API error:', error);
+                return error;
+            }
+        }
+    };
+    
+    console.log('Debug functions added to window.debugAdmin');
+    console.log('Available debug functions:', Object.keys(window.debugAdmin));
+});
+
+// Funciones adicionales para administración
+function verDetalleReserva(id) {
+    console.log('Ver detalle de reserva:', id);
+    
+    const pathParts = window.location.pathname.split('/');
+    const projectFolder = pathParts[1];
+    const apiUrl = `/${projectFolder}/api/admin.php?action=reserva_detalle&id=${id}`;
+    
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarModalDetalleReserva(data.data);
+            } else {
+                mostrarToast('Error al cargar detalle: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarToast('Error al cargar detalle de reserva', 'error');
+        });
+}
+
+function mostrarModalDetalleReserva(reserva) {
+    const modal = document.getElementById('modal-confirmacion');
+    if (!modal) return;
+    
+    // Cambiar el contenido del modal para mostrar detalles
+    const titulo = modal.querySelector('.modal-title');
+    const mensaje = modal.querySelector('#confirmacion-mensaje');
+    const btnConfirmar = modal.querySelector('#btn-confirmar-accion');
+    
+    titulo.textContent = 'Detalle de Reserva #' + reserva.id;
+    mensaje.innerHTML = `
+        <div style="text-align: left;">
+            <p><strong>Usuario:</strong> ${reserva.nombre_usuario || 'N/A'} (${reserva.email_usuario || 'N/A'})</p>
+            <p><strong>Apartamento:</strong> ${reserva.nombre_apartamento || 'N/A'}</p>
+            <p><strong>Provincia:</strong> ${reserva.provincia_apartamento || 'N/A'}</p>
+            <p><strong>Fechas:</strong> ${reserva.fecha_entrada} al ${reserva.fecha_salida}</p>
+            <p><strong>Huéspedes:</strong> ${reserva.num_huespedes}</p>
+            <p><strong>Estado:</strong> <span class="badge ${getBadgeClass(reserva.estado)}">${reserva.estado}</span></p>
+            <p><strong>Fecha de reserva:</strong> ${reserva.fecha_reserva || 'N/A'}</p>
+            ${reserva.notas ? `<p><strong>Notas:</strong> ${reserva.notas}</p>` : ''}
+            ${reserva.precio_total ? `<p><strong>Precio total:</strong> €${reserva.precio_total}</p>` : ''}
+        </div>
+    `;
+    
+    btnConfirmar.textContent = 'Cerrar';
+    btnConfirmar.className = 'btn btn-secondary';
+    btnConfirmar.onclick = () => {
+        modal.classList.remove('active');
+        // Restaurar el modal original
+        titulo.textContent = 'Confirmar Acción';
+        btnConfirmar.textContent = 'Confirmar';
+        btnConfirmar.className = 'btn btn-danger';
+    };
+    
+    modal.classList.add('active');
+}
+
+function cambiarEstadoReserva(id, nuevoEstado) {
+    if (!nuevoEstado || nuevoEstado === '') {
+        console.log('No se seleccionó un estado válido');
+        return;
+    }
+    
+    console.log('Cambiar estado de reserva:', id, 'a', nuevoEstado);
+    
+    const pathParts = window.location.pathname.split('/');
+    const projectFolder = pathParts[1];
+    const apiUrl = `/${projectFolder}/api/admin.php`;
+    
+    console.log('URL de API:', apiUrl);
+    
+    const requestData = {
+        action: 'reserva_cambiar_estado',
+        id: parseInt(id),
+        estado: nuevoEstado
+    };
+    
+    console.log('Datos de la petición:', requestData);
+    
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => {
+        console.log('Respuesta HTTP:', response.status, response.statusText);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Respuesta de la API:', data);
+        if (data.success) {
+            mostrarToast('Estado de reserva actualizado: ' + data.message, 'success');
+            cargarReservas(); // Recargar la tabla
+        } else {
+            mostrarToast('Error al cambiar estado: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error en la petición:', error);
+        mostrarToast('Error al cambiar estado: ' + error.message, 'error');
+    });
+}
+
+function eliminarReserva(id) {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta reserva? Esta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    const pathParts = window.location.pathname.split('/');
+    const projectFolder = pathParts[1];
+    const apiUrl = `/${projectFolder}/api/admin.php`;
+    
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            action: 'reserva_eliminar',
+            id: id
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarToast('Reserva eliminada correctamente', 'success');
+            cargarReservas(); // Recargar la tabla
+        } else {
+            mostrarToast('Error al eliminar reserva: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        mostrarToast('Error al eliminar reserva', 'error');
+    });
+}
+
+function cambiarRolUsuario(id, nuevoRol) {
+    if (!nuevoRol || nuevoRol === '') {
+        console.log('No se seleccionó un rol válido');
+        return;
+    }
+    
+    console.log('Cambiar rol de usuario:', id, 'a', nuevoRol);
+    
+    const pathParts = window.location.pathname.split('/');
+    const projectFolder = pathParts[1];
+    const apiUrl = `/${projectFolder}/api/admin.php`;
+    
+    console.log('URL de API:', apiUrl);
+    
+    const requestData = {
+        action: 'usuario_cambiar_rol',
+        id: parseInt(id),
+        rol: nuevoRol
+    };
+    
+    console.log('Datos de la petición:', requestData);
+    
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => {
+        console.log('Respuesta HTTP:', response.status, response.statusText);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Respuesta de la API:', data);
+        if (data.success) {
+            mostrarToast('Rol de usuario actualizado: ' + data.message, 'success');
+            cargarUsuarios(); // Recargar la tabla
+        } else {
+            mostrarToast('Error al cambiar rol: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error en la petición:', error);
+        mostrarToast('Error al cambiar rol: ' + error.message, 'error');
+    });
+}
+
+function cambiarEstadoUsuario(id, nuevoEstado) {
+    console.log('Cambiar estado de usuario:', id, 'a', nuevoEstado ? 'activo' : 'inactivo');
+    
+    const pathParts = window.location.pathname.split('/');
+    const projectFolder = pathParts[1];
+    const apiUrl = `/${projectFolder}/api/admin.php`;
+    
+    console.log('URL de API:', apiUrl);
+    
+    const requestData = {
+        action: 'usuario_cambiar_estado',
+        id: parseInt(id),
+        activo: Boolean(nuevoEstado)
+    };
+    
+    console.log('Datos de la petición:', requestData);
+    
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => {
+        console.log('Respuesta HTTP:', response.status, response.statusText);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Respuesta de la API:', data);
+        if (data.success) {
+            mostrarToast('Estado de usuario actualizado: ' + data.message, 'success');
+            cargarUsuarios(); // Recargar la tabla
+        } else {
+            mostrarToast('Error al cambiar estado: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error en la petición:', error);
+        mostrarToast('Error al cambiar estado: ' + error.message, 'error');
+    });
+}
+
+function verDetalleUsuario(id) {
+    console.log('Ver detalle de usuario:', id);
+    mostrarToast('Función de detalle de usuario en desarrollo', 'info');
+}
+
+function eliminarUsuario(id) {
+    if (!confirm('¿Estás seguro de que quieres eliminar este usuario? Esta acción no se puede deshacer y eliminará también todas sus reservas.')) {
+        return;
+    }
+    
+    const pathParts = window.location.pathname.split('/');
+    const projectFolder = pathParts[1];
+    const apiUrl = `/${projectFolder}/api/admin.php`;
+    
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            action: 'usuario_eliminar',
+            id: id
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarToast('Usuario eliminado correctamente', 'success');
+            cargarUsuarios(); // Recargar la tabla
+        } else {
+            mostrarToast('Error al eliminar usuario: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        mostrarToast('Error al eliminar usuario', 'error');
+    });
+}
+
+function getCurrentUserId() {
+    // Obtener el ID del usuario actual desde PHP
+    return <?= $_SESSION['usuario_id'] ?? 1 ?>;
+}
+
+// Funciones para gestión de modales
+function cerrarModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+function abrirModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+// Configurar eventos de cierre de modales
+document.addEventListener('click', function(e) {
+    if (e.target.matches('[data-modal-close]')) {
+        const modal = e.target.closest('.modal-overlay');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    }
+    
+    if (e.target.matches('.modal-overlay')) {
+        e.target.classList.remove('active');
+    }
+});
+
+// Cerrar modales con Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modalesActivos = document.querySelectorAll('.modal-overlay.active');
+        modalesActivos.forEach(modal => {
+            modal.classList.remove('active');
+        });
+    }
 });
 </script>

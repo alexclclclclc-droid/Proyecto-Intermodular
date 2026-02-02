@@ -13,30 +13,307 @@ const projectFolder = pathParts[1];
 const API_BASE = '/' + projectFolder + '/api';
 
 /**
- * Realiza peticiones a la API con manejo de errores
+ * Realiza peticiones a la API con manejo robusto de errores
  */
 async function apiRequest(endpoint, options = {}) {
     const defaultOptions = {
         headers: {
             'Content-Type': 'application/json',
         },
+        timeout: 10000, // 10 segundos por defecto
+        retries: 2, // 2 reintentos por defecto
+        retryDelay: 1000 // 1 segundo entre reintentos
     };
 
     const config = { ...defaultOptions, ...options };
+    const { timeout, retries, retryDelay, ...fetchOptions } = config;
     
-    try {
-        const response = await fetch(`${API_BASE}/${endpoint}`, config);
-        const data = await response.json();
+    // Función para realizar una petición individual
+    const makeRequest = async () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
         
-        if (!response.ok) {
-            throw new Error(data.error || `Error HTTP: ${response.status}`);
+        try {
+            const response = await fetch(`${API_BASE}/${endpoint}`, {
+                ...fetchOptions,
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            // Verificar si la respuesta es JSON válida
+            let data;
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                try {
+                    data = await response.json();
+                } catch (jsonError) {
+                    throw new Error('Respuesta del servidor no es JSON válido');
+                }
+            } else {
+                // Si no es JSON, intentar obtener texto para mejor debugging
+                const text = await response.text();
+                throw new Error(`Respuesta inesperada del servidor: ${text.substring(0, 100)}`);
+            }
+            
+            if (!response.ok) {
+                const errorMessage = data.error || `Error HTTP ${response.status}: ${response.statusText}`;
+                const error = new Error(errorMessage);
+                error.status = response.status;
+                error.data = data;
+                throw error;
+            }
+            
+            return data;
+            
+        } catch (error) {
+            clearTimeout(timeoutId);
+            
+            // Clasificar tipos de error para mejor manejo
+            if (error.name === 'AbortError') {
+                const timeoutError = new Error(`Timeout: La petición tardó más de ${timeout}ms`);
+                timeoutError.type = 'timeout';
+                throw timeoutError;
+            }
+            
+            if (error instanceof TypeError && error.message.includes('fetch')) {
+                const networkError = new Error('Error de red: Verifica tu conexión a internet');
+                networkError.type = 'network';
+                throw networkError;
+            }
+            
+            // Re-lanzar otros errores con información adicional
+            error.endpoint = endpoint;
+            error.timestamp = new Date().toISOString();
+            throw error;
+        }
+    };
+    
+    // Lógica de reintentos
+    let lastError;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            const result = await makeRequest();
+            
+            // Si es un reintento exitoso, mostrar notificación
+            if (attempt > 0) {
+                console.log(`Petición exitosa después de ${attempt} reintento(s)`);
+                showToast('Conexión restablecida', 'success');
+            }
+            
+            return result;
+            
+        } catch (error) {
+            lastError = error;
+            
+            // No reintentar en ciertos casos
+            if (error.status === 401 || error.status === 403 || error.status === 404) {
+                break;
+            }
+            
+            // Si no es el último intento, esperar antes del siguiente
+            if (attempt < retries) {
+                console.log(`Reintentando petición en ${retryDelay}ms (intento ${attempt + 1}/${retries})`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                // Incrementar delay exponencialmente
+                retryDelay *= 1.5;
+            }
+        }
+    }
+    
+    // Si llegamos aquí, todos los intentos fallaron
+    console.error('API Error después de reintentos:', lastError);
+    
+    // Mostrar error apropiado al usuario
+    if (lastError.type === 'timeout') {
+        showToast('La petición tardó demasiado. Inténtalo de nuevo.', 'error');
+    } else if (lastError.type === 'network') {
+        showToast('Error de conexión. Verifica tu internet.', 'error');
+    } else if (lastError.status >= 500) {
+        showToast('Error del servidor. Inténtalo más tarde.', 'error');
+    } else if (lastError.status === 401) {
+        showToast('Sesión expirada. Inicia sesión de nuevo.', 'warning');
+        // Opcional: redirigir al login
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    }
+    
+    throw lastError;
+}
+
+/**
+ * Versión simplificada de apiRequest para casos que no necesitan reintentos
+ */
+async function apiRequestSimple(endpoint, options = {}) {
+    return apiRequest(endpoint, { ...options, retries: 0 });
+}
+
+/**
+ * Versión de apiRequest optimizada para operaciones críticas
+ */
+async function apiRequestCritical(endpoint, options = {}) {
+    return apiRequest(endpoint, { 
+        ...options, 
+        timeout: 15000, // Timeout más largo
+        retries: 3, // Más reintentos
+        retryDelay: 2000 // Delay más largo
+    });
+}
+
+// ===================================
+// GESTIÓN DE ESTADOS DE UI
+// ===================================
+
+/**
+ * Gestiona estados de carga y UI de forma consistente
+ */
+const UIStateManager = {
+    loadingElements: new Map(),
+    
+    /**
+     * Muestra indicador de carga en un elemento
+     */
+    showLoading(element, message = 'Cargando...') {
+        if (!element) return;
+        
+        // Guardar estado original
+        if (!this.loadingElements.has(element)) {
+            this.loadingElements.set(element, {
+                originalContent: element.innerHTML,
+                originalDisabled: element.disabled,
+                originalClassName: element.className
+            });
         }
         
-        return data;
+        // Aplicar estado de carga
+        if (element.tagName === 'BUTTON') {
+            element.disabled = true;
+            element.innerHTML = `
+                <span class="loading-spinner"></span>
+                ${message}
+            `;
+            element.classList.add('loading');
+        } else {
+            element.innerHTML = `
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <span class="loading-text">${message}</span>
+                </div>
+            `;
+            element.classList.add('loading');
+        }
+    },
+    
+    /**
+     * Oculta indicador de carga y restaura estado original
+     */
+    hideLoading(element) {
+        if (!element || !this.loadingElements.has(element)) return;
+        
+        const originalState = this.loadingElements.get(element);
+        
+        // Restaurar estado original
+        element.innerHTML = originalState.originalContent;
+        element.disabled = originalState.originalDisabled;
+        element.className = originalState.originalClassName;
+        
+        // Limpiar del mapa
+        this.loadingElements.delete(element);
+    },
+    
+    /**
+     * Muestra estado de error en un elemento
+     */
+    showError(element, message = 'Error al cargar') {
+        if (!element) return;
+        
+        element.innerHTML = `
+            <div class="error-container">
+                <span class="error-icon">⚠️</span>
+                <span class="error-text">${message}</span>
+                <button class="btn btn-sm btn-secondary retry-btn" onclick="location.reload()">
+                    Reintentar
+                </button>
+            </div>
+        `;
+        element.classList.add('error-state');
+    },
+    
+    /**
+     * Muestra estado vacío en un elemento
+     */
+    showEmpty(element, message = 'No hay datos disponibles', icon = '📭') {
+        if (!element) return;
+        
+        element.innerHTML = `
+            <div class="empty-container">
+                <span class="empty-icon">${icon}</span>
+                <span class="empty-text">${message}</span>
+            </div>
+        `;
+        element.classList.add('empty-state');
+    },
+    
+    /**
+     * Limpia todos los estados especiales de un elemento
+     */
+    clearState(element) {
+        if (!element) return;
+        
+        element.classList.remove('loading', 'error-state', 'empty-state');
+        this.hideLoading(element);
+    }
+};
+
+/**
+ * Wrapper para operaciones asíncronas con manejo automático de UI
+ */
+async function withLoadingState(element, asyncOperation, loadingMessage = 'Cargando...') {
+    try {
+        UIStateManager.showLoading(element, loadingMessage);
+        const result = await asyncOperation();
+        UIStateManager.hideLoading(element);
+        return result;
     } catch (error) {
-        console.error('API Error:', error);
+        UIStateManager.hideLoading(element);
+        UIStateManager.showError(element, error.message || 'Error al procesar');
         throw error;
     }
+}
+
+/**
+ * Debounce mejorado con cancelación
+ */
+function debounceWithCancel(func, wait) {
+    let timeout;
+    let cancelled = false;
+    
+    const debounced = function executedFunction(...args) {
+        if (cancelled) return;
+        
+        const later = () => {
+            clearTimeout(timeout);
+            if (!cancelled) func(...args);
+        };
+        
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+    
+    debounced.cancel = () => {
+        cancelled = true;
+        clearTimeout(timeout);
+    };
+    
+    debounced.flush = () => {
+        if (timeout) {
+            clearTimeout(timeout);
+            func();
+        }
+    };
+    
+    return debounced;
 }
 
 /**
@@ -438,6 +715,13 @@ const ApartamentosModule = {
             ` : ''}
         `;
 
+        // Mostrar/ocultar botón de reserva según estado de autenticación
+        const btnReservar = document.getElementById('btn-reservar-apartamento');
+        if (btnReservar) {
+            btnReservar.style.display = 'inline-flex';
+            btnReservar.onclick = () => ReservaModule.showReservaForm(apt);
+        }
+
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     },
@@ -572,6 +856,300 @@ const AuthModule = {
         if (modal) {
             modal.classList.remove('active');
             document.body.style.overflow = '';
+        }
+    }
+};
+
+// ===================================
+// GESTIÓN DE RESERVAS
+// ===================================
+
+const ReservaModule = {
+    currentApartamento: null,
+    isCheckingAvailability: false,
+
+    async showReservaForm(apartamento) {
+        // Verificar autenticación
+        const authStatus = await AuthModule.checkSession();
+        if (!authStatus.logged_in) {
+            AuthModule.closeModal('modal-detalle');
+            AuthModule.openModal('modal-login');
+            showToast('Debes iniciar sesión para reservar', 'warning');
+            return;
+        }
+
+        this.currentApartamento = apartamento;
+        
+        // Actualizar información del apartamento en el modal
+        const infoContainer = document.getElementById('reserva-apartamento-info');
+        if (infoContainer) {
+            infoContainer.innerHTML = `
+                <h4>${escapeHtml(apartamento.nombre)}</h4>
+                <p>📍 ${escapeHtml(apartamento.municipio || '')}, ${escapeHtml(apartamento.provincia)}</p>
+                <p>👥 Capacidad: ${apartamento.plazas || '?'} plazas</p>
+            `;
+        }
+
+        // Establecer ID del apartamento
+        const idInput = document.getElementById('reserva-id-apartamento');
+        if (idInput) {
+            idInput.value = apartamento.id;
+        }
+
+        // Configurar límite de huéspedes
+        this.updateGuestOptions(apartamento.plazas);
+
+        // Limpiar formulario
+        this.resetForm();
+
+        // Cerrar modal de detalles y abrir modal de reserva
+        AuthModule.closeModal('modal-detalle');
+        AuthModule.openModal('modal-reserva');
+    },
+
+    updateGuestOptions(maxCapacity) {
+        const select = document.getElementById('reserva-num-huespedes');
+        if (!select || !maxCapacity) return;
+
+        // Limpiar opciones existentes
+        select.innerHTML = '<option value="">Seleccionar...</option>';
+
+        // Agregar opciones hasta la capacidad máxima
+        for (let i = 1; i <= Math.min(maxCapacity, 12); i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `${i} huésped${i > 1 ? 'es' : ''}`;
+            select.appendChild(option);
+        }
+    },
+
+    resetForm() {
+        const form = document.getElementById('form-reserva');
+        if (form) {
+            form.reset();
+        }
+
+        // Limpiar mensajes de disponibilidad
+        this.hideAvailabilityInfo();
+
+        // Deshabilitar botón de confirmar
+        const btnConfirmar = document.getElementById('btn-confirmar-reserva');
+        if (btnConfirmar) {
+            btnConfirmar.disabled = true;
+        }
+
+        // Establecer fechas mínimas
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+        const fechaEntrada = document.getElementById('reserva-fecha-entrada');
+        const fechaSalida = document.getElementById('reserva-fecha-salida');
+        
+        if (fechaEntrada) {
+            fechaEntrada.min = today;
+        }
+        if (fechaSalida) {
+            fechaSalida.min = tomorrow;
+        }
+    },
+
+    async checkDisponibilidad(apartamentoId, fechaEntrada, fechaSalida) {
+        if (this.isCheckingAvailability) return;
+        
+        if (!apartamentoId || !fechaEntrada || !fechaSalida) {
+            this.hideAvailabilityInfo();
+            return;
+        }
+
+        // Validar que la fecha de salida sea posterior a la entrada
+        if (new Date(fechaSalida) <= new Date(fechaEntrada)) {
+            this.showAvailabilityInfo('La fecha de salida debe ser posterior a la fecha de entrada', 'error');
+            return;
+        }
+
+        this.isCheckingAvailability = true;
+        this.showAvailabilityInfo('Verificando disponibilidad...', 'checking');
+
+        try {
+            const response = await apiRequest(
+                `reservas.php?action=disponibilidad&id_apartamento=${apartamentoId}&fecha_entrada=${fechaEntrada}&fecha_salida=${fechaSalida}`
+            );
+
+            if (response.success) {
+                if (response.disponible) {
+                    this.showAvailabilityInfo('✓ Apartamento disponible para las fechas seleccionadas', 'success');
+                    this.enableConfirmButton();
+                } else {
+                    this.showAvailabilityInfo('✕ El apartamento no está disponible en estas fechas. Por favor, selecciona otras fechas.', 'error');
+                    this.disableConfirmButton();
+                    // Sugerir fechas alternativas
+                    this.suggestAlternativeDates(apartamentoId);
+                }
+            } else {
+                throw new Error(response.error || 'Error al verificar disponibilidad');
+            }
+        } catch (error) {
+            console.error('Error checking availability:', error);
+            this.showAvailabilityInfo('Error al verificar disponibilidad. Inténtalo de nuevo.', 'error');
+            this.disableConfirmButton();
+        } finally {
+            this.isCheckingAvailability = false;
+        }
+    },
+
+    showAvailabilityInfo(message, type) {
+        const container = document.getElementById('disponibilidad-info');
+        if (!container) return;
+
+        container.textContent = message;
+        container.className = `alert disponibilidad-info ${type}`;
+        container.style.display = 'block';
+    },
+
+    hideAvailabilityInfo() {
+        const container = document.getElementById('disponibilidad-info');
+        if (container) {
+            container.style.display = 'none';
+        }
+    },
+
+    enableConfirmButton() {
+        const btn = document.getElementById('btn-confirmar-reserva');
+        if (btn) {
+            btn.disabled = false;
+        }
+    },
+
+    disableConfirmButton() {
+        const btn = document.getElementById('btn-confirmar-reserva');
+        if (btn) {
+            btn.disabled = true;
+        }
+    },
+
+    async submitReserva(formData) {
+        const btn = document.getElementById('btn-confirmar-reserva');
+        if (!btn) return;
+
+        // Mostrar estado de carga
+        btn.classList.add('loading');
+        btn.disabled = true;
+
+        try {
+            const response = await apiRequest('reservas.php?action=crear', {
+                method: 'POST',
+                body: JSON.stringify(formData)
+            });
+
+            if (response.success) {
+                showToast('¡Reserva creada correctamente!', 'success');
+                AuthModule.closeModal('modal-reserva');
+                
+                // Redirigir a mis reservas después de un breve delay
+                setTimeout(() => {
+                    window.location.href = './mis-reservas.php';
+                }, 1500);
+            } else {
+                if (response.errors && Array.isArray(response.errors)) {
+                    response.errors.forEach(error => showToast(error, 'error'));
+                } else {
+                    showToast(response.error || 'Error al crear la reserva', 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error submitting reservation:', error);
+            showToast(error.message || 'Error al procesar la reserva', 'error');
+        } finally {
+            // Quitar estado de carga
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        }
+    },
+
+    handleReservaResponse(response) {
+        if (response.success) {
+            showToast('¡Reserva creada correctamente!', 'success');
+            AuthModule.closeModal('modal-reserva');
+            
+            // Redirigir a mis reservas
+            setTimeout(() => {
+                window.location.href = './mis-reservas.php';
+            }, 1500);
+        } else {
+            if (response.errors && Array.isArray(response.errors)) {
+                response.errors.forEach(error => showToast(error, 'error'));
+            } else {
+                showToast(response.error || 'Error al crear la reserva', 'error');
+            }
+        }
+    },
+
+    async suggestAlternativeDates(apartamentoId) {
+        try {
+            // Obtener fechas ocupadas para sugerir alternativas
+            const response = await apiRequest(`reservas.php?action=fechas_ocupadas&id_apartamento=${apartamentoId}`);
+            
+            if (response.success && response.data) {
+                // Lógica simple para sugerir fechas alternativas
+                const today = new Date();
+                const suggestions = [];
+                
+                // Sugerir próximas 3 semanas disponibles
+                for (let i = 1; i <= 21; i += 7) {
+                    const startDate = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
+                    const endDate = new Date(startDate.getTime() + 3 * 24 * 60 * 60 * 1000);
+                    
+                    const startStr = startDate.toISOString().split('T')[0];
+                    const endStr = endDate.toISOString().split('T')[0];
+                    
+                    // Verificar si estas fechas están libres
+                    const isOccupied = response.data.some(ocupada => {
+                        return (startStr >= ocupada.fecha_entrada && startStr < ocupada.fecha_salida) ||
+                               (endStr > ocupada.fecha_entrada && endStr <= ocupada.fecha_salida) ||
+                               (startStr <= ocupada.fecha_entrada && endStr >= ocupada.fecha_salida);
+                    });
+                    
+                    if (!isOccupied) {
+                        suggestions.push({
+                            entrada: startStr,
+                            salida: endStr,
+                            formatted: `${formatDate(startStr)} - ${formatDate(endStr)}`
+                        });
+                    }
+                    
+                    if (suggestions.length >= 2) break;
+                }
+                
+                if (suggestions.length > 0) {
+                    const suggestionHtml = suggestions.map(s => 
+                        `<button class="btn btn-ghost btn-sm" onclick="ReservaModule.applySuggestedDates('${s.entrada}', '${s.salida}')" style="margin: 2px;">
+                            ${s.formatted}
+                        </button>`
+                    ).join('');
+                    
+                    this.showAvailabilityInfo(
+                        `✕ No disponible en estas fechas. Prueba estas alternativas: ${suggestionHtml}`, 
+                        'error'
+                    );
+                }
+            }
+        } catch (error) {
+            console.error('Error getting alternative dates:', error);
+        }
+    },
+
+    applySuggestedDates(fechaEntrada, fechaSalida) {
+        const entradaInput = document.getElementById('reserva-fecha-entrada');
+        const salidaInput = document.getElementById('reserva-fecha-salida');
+        
+        if (entradaInput && salidaInput) {
+            entradaInput.value = fechaEntrada;
+            salidaInput.value = fechaSalida;
+            
+            // Verificar disponibilidad de las nuevas fechas
+            if (this.currentApartamento) {
+                this.checkDisponibilidad(this.currentApartamento.id, fechaEntrada, fechaSalida);
+            }
         }
     }
 };
@@ -738,6 +1316,57 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Formulario de reserva
+    const reservaForm = document.getElementById('form-reserva');
+    if (reservaForm) {
+        ValidacionModule.bindRealTimeValidation(reservaForm);
+        
+        // Event listeners para verificación de disponibilidad
+        const fechaEntrada = document.getElementById('reserva-fecha-entrada');
+        const fechaSalida = document.getElementById('reserva-fecha-salida');
+        const apartamentoId = document.getElementById('reserva-id-apartamento');
+
+        const checkAvailability = debounce(() => {
+            if (apartamentoId && fechaEntrada && fechaSalida) {
+                ReservaModule.checkDisponibilidad(
+                    apartamentoId.value,
+                    fechaEntrada.value,
+                    fechaSalida.value
+                );
+            }
+        }, 500);
+
+        if (fechaEntrada) {
+            fechaEntrada.addEventListener('change', () => {
+                // Actualizar fecha mínima de salida
+                if (fechaSalida && fechaEntrada.value) {
+                    const nextDay = new Date(fechaEntrada.value);
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    fechaSalida.min = nextDay.toISOString().split('T')[0];
+                    
+                    // Si la fecha de salida es anterior, limpiarla
+                    if (fechaSalida.value && new Date(fechaSalida.value) <= new Date(fechaEntrada.value)) {
+                        fechaSalida.value = '';
+                    }
+                }
+                checkAvailability();
+            });
+        }
+
+        if (fechaSalida) {
+            fechaSalida.addEventListener('change', checkAvailability);
+        }
+
+        // Submit del formulario
+        reservaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (ValidacionModule.validateForm(reservaForm)) {
+                const formData = Object.fromEntries(new FormData(reservaForm));
+                await ReservaModule.submitReserva(formData);
+            }
+        });
+    }
+
     // Menú móvil
     const menuToggle = document.querySelector('.menu-toggle');
     const nav = document.querySelector('.nav');
@@ -791,3 +1420,336 @@ toastStyles.textContent = `
     .toast-info .toast-icon { color: #1e40af; }
 `;
 document.head.appendChild(toastStyles);
+// ===================================
+// OPTIMIZACIONES DE RENDIMIENTO
+// ===================================
+
+/**
+ * Módulo de optimización de rendimiento
+ */
+const PerformanceOptimizer = {
+    // Cache para peticiones API
+    apiCache: new Map(),
+    cacheTimeout: 5 * 60 * 1000, // 5 minutos
+    
+    // Intersection Observer para lazy loading
+    intersectionObserver: null,
+    
+    // Debounced functions cache
+    debouncedFunctions: new Map(),
+    
+    /**
+     * Inicializar optimizaciones
+     */
+    init() {
+        this.setupIntersectionObserver();
+        this.setupPerformanceMonitoring();
+        this.optimizeImages();
+        this.preloadCriticalResources();
+    },
+    
+    /**
+     * Cache para peticiones API con TTL
+     */
+    async cachedApiRequest(endpoint, options = {}) {
+        const cacheKey = `${endpoint}_${JSON.stringify(options)}`;
+        const cached = this.apiCache.get(cacheKey);
+        
+        if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+            return cached.data;
+        }
+        
+        try {
+            const data = await apiRequest(endpoint, options);
+            this.apiCache.set(cacheKey, {
+                data,
+                timestamp: Date.now()
+            });
+            return data;
+        } catch (error) {
+            // Si hay error y tenemos cache, usar cache aunque esté expirado
+            if (cached) {
+                console.warn('Using expired cache due to API error');
+                return cached.data;
+            }
+            throw error;
+        }
+    },
+    
+    /**
+     * Limpiar cache expirado
+     */
+    cleanExpiredCache() {
+        const now = Date.now();
+        for (const [key, value] of this.apiCache.entries()) {
+            if (now - value.timestamp > this.cacheTimeout) {
+                this.apiCache.delete(key);
+            }
+        }
+    },
+    
+    /**
+     * Configurar Intersection Observer para lazy loading
+     */
+    setupIntersectionObserver() {
+        if (!('IntersectionObserver' in window)) return;
+        
+        this.intersectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const element = entry.target;
+                    element.classList.add('loaded');
+                    
+                    // Si es una imagen, cargar src desde data-src
+                    if (element.tagName === 'IMG' && element.dataset.src) {
+                        element.src = element.dataset.src;
+                        element.removeAttribute('data-src');
+                    }
+                    
+                    // Si es un componente, ejecutar función de carga
+                    if (element.dataset.lazyLoad) {
+                        const loadFunction = window[element.dataset.lazyLoad];
+                        if (typeof loadFunction === 'function') {
+                            loadFunction(element);
+                        }
+                    }
+                    
+                    this.intersectionObserver.unobserve(element);
+                }
+            });
+        }, {
+            rootMargin: '50px',
+            threshold: 0.1
+        });
+        
+        // Observar elementos lazy-load existentes
+        document.querySelectorAll('.lazy-load').forEach(el => {
+            this.intersectionObserver.observe(el);
+        });
+    },
+    
+    /**
+     * Observar nuevo elemento para lazy loading
+     */
+    observeElement(element) {
+        if (this.intersectionObserver && element) {
+            element.classList.add('lazy-load');
+            this.intersectionObserver.observe(element);
+        }
+    },
+    
+    /**
+     * Configurar monitoreo de rendimiento
+     */
+    setupPerformanceMonitoring() {
+        if (!('PerformanceObserver' in window)) return;
+        
+        // Monitorear métricas de rendimiento
+        try {
+            const observer = new PerformanceObserver((list) => {
+                list.getEntries().forEach(entry => {
+                    if (entry.entryType === 'navigation') {
+                        console.log('Page Load Time:', entry.loadEventEnd - entry.loadEventStart);
+                    } else if (entry.entryType === 'paint') {
+                        console.log(`${entry.name}:`, entry.startTime);
+                    }
+                });
+            });
+            
+            observer.observe({ entryTypes: ['navigation', 'paint'] });
+        } catch (e) {
+            console.warn('Performance monitoring not available');
+        }
+    },
+    
+    /**
+     * Optimizar imágenes
+     */
+    optimizeImages() {
+        // Lazy loading para imágenes
+        document.querySelectorAll('img[data-src]').forEach(img => {
+            this.observeElement(img);
+        });
+        
+        // Preload para imágenes críticas
+        document.querySelectorAll('img[data-preload]').forEach(img => {
+            const link = document.createElement('link');
+            link.rel = 'preload';
+            link.as = 'image';
+            link.href = img.src || img.dataset.src;
+            document.head.appendChild(link);
+        });
+    },
+    
+    /**
+     * Precargar recursos críticos
+     */
+    preloadCriticalResources() {
+        // Precargar datos críticos
+        const criticalEndpoints = ['apartamentos.php?action=provincias'];
+        
+        criticalEndpoints.forEach(endpoint => {
+            // Precargar en idle time
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(() => {
+                    this.cachedApiRequest(endpoint).catch(() => {
+                        // Ignorar errores en precarga
+                    });
+                });
+            }
+        });
+    },
+    
+    /**
+     * Debounce optimizado con cache
+     */
+    getDebounced(key, func, wait) {
+        if (!this.debouncedFunctions.has(key)) {
+            this.debouncedFunctions.set(key, debounceWithCancel(func, wait));
+        }
+        return this.debouncedFunctions.get(key);
+    },
+    
+    /**
+     * Throttle para eventos de scroll/resize
+     */
+    throttle(func, limit) {
+        let inThrottle;
+        return function() {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
+        };
+    },
+    
+    /**
+     * Optimizar rendimiento del mapa
+     */
+    optimizeMapPerformance(map) {
+        if (!map) return;
+        
+        // Throttle para eventos de mapa
+        const throttledMoveEnd = this.throttle(() => {
+            // Lógica para cuando el mapa deja de moverse
+            console.log('Map movement ended');
+        }, 300);
+        
+        map.on('moveend', throttledMoveEnd);
+        
+        // Optimizar clustering
+        if (window.markerCluster) {
+            // Configurar clustering para mejor rendimiento
+            window.markerCluster.options.disableClusteringAtZoom = 15;
+            window.markerCluster.options.maxClusterRadius = 40;
+        }
+    },
+    
+    /**
+     * Limpiar recursos no utilizados
+     */
+    cleanup() {
+        this.cleanExpiredCache();
+        
+        // Limpiar debounced functions no utilizadas
+        this.debouncedFunctions.clear();
+        
+        // Desconectar observers
+        if (this.intersectionObserver) {
+            this.intersectionObserver.disconnect();
+        }
+    }
+};
+
+/**
+ * Utilidades de rendimiento
+ */
+const PerfUtils = {
+    /**
+     * Medir tiempo de ejecución de una función
+     */
+    async measureTime(name, asyncFn) {
+        const start = performance.now();
+        try {
+            const result = await asyncFn();
+            const end = performance.now();
+            console.log(`${name} took ${end - start} milliseconds`);
+            return result;
+        } catch (error) {
+            const end = performance.now();
+            console.log(`${name} failed after ${end - start} milliseconds`);
+            throw error;
+        }
+    },
+    
+    /**
+     * Batch de operaciones DOM
+     */
+    batchDOMUpdates(updates) {
+        return new Promise(resolve => {
+            requestAnimationFrame(() => {
+                updates.forEach(update => update());
+                resolve();
+            });
+        });
+    },
+    
+    /**
+     * Verificar si el dispositivo tiene recursos limitados
+     */
+    isLowEndDevice() {
+        // Heurísticas para detectar dispositivos de gama baja
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        const memory = navigator.deviceMemory;
+        const cores = navigator.hardwareConcurrency;
+        
+        return (
+            (memory && memory < 4) ||
+            (cores && cores < 4) ||
+            (connection && (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g'))
+        );
+    },
+    
+    /**
+     * Configuración adaptativa basada en el dispositivo
+     */
+    getAdaptiveConfig() {
+        const isLowEnd = this.isLowEndDevice();
+        
+        return {
+            // Reducir animaciones en dispositivos de gama baja
+            enableAnimations: !isLowEnd,
+            // Reducir número de elementos mostrados
+            itemsPerPage: isLowEnd ? 6 : 12,
+            // Reducir calidad de imágenes
+            imageQuality: isLowEnd ? 'low' : 'high',
+            // Reducir frecuencia de actualizaciones
+            updateInterval: isLowEnd ? 2000 : 1000,
+            // Configuración de mapa
+            mapMaxZoom: isLowEnd ? 16 : 18,
+            clusterRadius: isLowEnd ? 60 : 40
+        };
+    }
+};
+
+// Inicializar optimizaciones cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+    PerformanceOptimizer.init();
+    
+    // Limpiar cache periódicamente
+    setInterval(() => {
+        PerformanceOptimizer.cleanExpiredCache();
+    }, 10 * 60 * 1000); // Cada 10 minutos
+    
+    // Cleanup al cerrar la página
+    window.addEventListener('beforeunload', () => {
+        PerformanceOptimizer.cleanup();
+    });
+});
+
+// Exponer utilidades globalmente para uso en otros módulos
+window.PerformanceOptimizer = PerformanceOptimizer;
+window.PerfUtils = PerfUtils;

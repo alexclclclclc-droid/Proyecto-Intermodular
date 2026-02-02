@@ -182,7 +182,80 @@ $viewsPath = $inViews ? './' : './views/';
                 <!-- Contenido dinámico -->
             </div>
             <div class="modal-footer">
+                <button id="btn-reservar-apartamento" class="btn btn-primary" style="display: none;">
+                    📅 Reservar apartamento
+                </button>
                 <button class="btn btn-secondary" data-modal-close>Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Reserva -->
+    <div id="modal-reserva" class="modal-overlay">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Reservar apartamento</h3>
+                <button class="modal-close" data-modal-close>&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="reserva-apartamento-info" class="mb-3" style="padding: var(--space-md); background: var(--color-surface-alt); border-radius: var(--radius-md); margin-bottom: var(--space-lg);">
+                    <!-- Información del apartamento -->
+                </div>
+                
+                <form id="form-reserva">
+                    <input type="hidden" id="reserva-id-apartamento" name="id_apartamento">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label form-label-required" for="reserva-fecha-entrada">Fecha de entrada</label>
+                            <input type="date" id="reserva-fecha-entrada" name="fecha_entrada" class="form-input" 
+                                   data-validate="required" min="<?= date('Y-m-d') ?>">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label form-label-required" for="reserva-fecha-salida">Fecha de salida</label>
+                            <input type="date" id="reserva-fecha-salida" name="fecha_salida" class="form-input" 
+                                   data-validate="required" min="<?= date('Y-m-d', strtotime('+1 day')) ?>">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label form-label-required" for="reserva-num-huespedes">Número de huéspedes</label>
+                        <select id="reserva-num-huespedes" name="num_huespedes" class="form-select" data-validate="required">
+                            <option value="">Seleccionar...</option>
+                            <option value="1">1 huésped</option>
+                            <option value="2">2 huéspedes</option>
+                            <option value="3">3 huéspedes</option>
+                            <option value="4">4 huéspedes</option>
+                            <option value="5">5 huéspedes</option>
+                            <option value="6">6 huéspedes</option>
+                            <option value="7">7 huéspedes</option>
+                            <option value="8">8 huéspedes</option>
+                            <option value="9">9 huéspedes</option>
+                            <option value="10">10 huéspedes</option>
+                            <option value="11">11 huéspedes</option>
+                            <option value="12">12 huéspedes</option>
+                        </select>
+                    </div>
+                    
+                    <div id="disponibilidad-info" class="alert" style="display: none; margin-bottom: var(--space-lg);">
+                        <!-- Información de disponibilidad -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="reserva-notas">Notas adicionales</label>
+                        <textarea id="reserva-notas" name="notas" class="form-input" rows="3" 
+                                  placeholder="Comentarios, peticiones especiales, etc. (opcional)"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" id="btn-confirmar-reserva" class="btn btn-primary" style="width: 100%;" disabled>
+                            <span class="btn-text">Confirmar reserva</span>
+                            <span class="btn-loading" style="display: none;">
+                                <span class="spinner-sm"></span> Procesando...
+                            </span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

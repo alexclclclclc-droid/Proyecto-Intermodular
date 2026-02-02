@@ -101,23 +101,24 @@ class ReservaDAO {
      */
     public function verificarDisponibilidad(int $idApartamento, string $fechaEntrada, string $fechaSalida, ?int $exceptoReservaId = null): bool {
         $sql = "SELECT COUNT(*) FROM {$this->table}
-                WHERE id_apartamento = :id_apartamento
+                WHERE id_apartamento = ?
                 AND estado IN ('pendiente', 'confirmada')
                 AND (
-                    (fecha_entrada <= :entrada AND fecha_salida > :entrada)
-                    OR (fecha_entrada < :salida AND fecha_salida >= :salida)
-                    OR (fecha_entrada >= :entrada AND fecha_salida <= :salida)
+                    (fecha_entrada <= ? AND fecha_salida > ?)
+                    OR (fecha_entrada < ? AND fecha_salida >= ?)
+                    OR (fecha_entrada >= ? AND fecha_salida <= ?)
                 )";
         
         $params = [
-            ':id_apartamento' => $idApartamento,
-            ':entrada' => $fechaEntrada,
-            ':salida' => $fechaSalida
+            $idApartamento,
+            $fechaEntrada, $fechaEntrada,  // entrada used twice
+            $fechaSalida, $fechaSalida,    // salida used twice  
+            $fechaEntrada, $fechaSalida    // entrada and salida for third condition
         ];
 
         if ($exceptoReservaId) {
-            $sql .= " AND id != :excepto_id";
-            $params[':excepto_id'] = $exceptoReservaId;
+            $sql .= " AND id != ?";
+            $params[] = $exceptoReservaId;
         }
 
         $stmt = $this->conn->prepare($sql);
@@ -213,6 +214,114 @@ class ReservaDAO {
                 FROM {$this->table}";
         
         return $this->conn->query($sql)->fetch();
+    }
+
+    /**
+     * Obtener reservas con filtros
+     */
+    public function obtenerConFiltros(array $filtros = []): array {
+        $sql = "SELECT r.*, 
+                       u.nombre as nombre_usuario, u.email as email_usuario,
+                       a.nombre as nombre_apartamento, a.provincia as provincia_apartamento
+                FROM {$this->table} r
+                INNER JOIN usuarios u ON r.id_usuario = u.id
+                INNER JOIN apartamentos a ON r.id_apartamento = a.id
+                WHERE 1=1";
+        $params = [];
+        
+        if (!empty($filtros['estado'])) {
+            $sql .= " AND r.estado = :estado";
+            $params[':estado'] = $filtros['estado'];
+        }
+        
+        if (!empty($filtros['fecha_desde'])) {
+            $sql .= " AND r.fecha_entrada >= :fecha_desde";
+            $params[':fecha_desde'] = $filtros['fecha_desde'];
+        }
+        
+        if (!empty($filtros['fecha_hasta'])) {
+            $sql .= " AND r.fecha_salida <= :fecha_hasta";
+            $params[':fecha_hasta'] = $filtros['fecha_hasta'];
+        }
+        
+        if (!empty($filtros['usuario_email'])) {
+            $sql .= " AND u.email LIKE :usuario_email";
+            $params[':usuario_email'] = '%' . $filtros['usuario_email'] . '%';
+        }
+        
+        $sql .= " ORDER BY r.fecha_reserva DESC";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($params);
+        
+        return array_map(fn($row) => new Reserva($row), $stmt->fetchAll());
+    }
+
+    /**
+     * Obtener estadísticas de reservas por período
+     */
+    public function obtenerEstadisticasPeriodo(string $fechaInicio, string $fechaFin): array {
+        $sql = "SELECT 
+                    estado,
+                    COUNT(*) as cantidad,
+                    SUM(CASE WHEN precio_total IS NOT NULL THEN precio_total ELSE 0 END) as ingresos
+                FROM {$this->table}
+                WHERE fecha_reserva BETWEEN :inicio AND :fin
+                GROUP BY estado";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([
+            ':inicio' => $fechaInicio,
+            ':fin' => $fechaFin
+        ]);
+        
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Obtener reservas activas para una fecha específica
+     */
+    public function obtenerReservasActivas(string $fecha): array {
+        $sql = "SELECT DISTINCT r.id_apartamento, r.id, r.fecha_entrada, r.fecha_salida, r.estado
+                FROM {$this->table} r
+                WHERE r.estado IN ('confirmada', 'pendiente')
+                AND r.fecha_entrada <= :fecha
+                AND r.fecha_salida > :fecha
+                ORDER BY r.id_apartamento";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([':fecha' => $fecha]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Obtener estadísticas de ocupación por período
+     */
+    public function obtenerEstadisticasOcupacion(string $fechaInicio, string $fechaFin): array {
+        $sql = "SELECT 
+                    COUNT(DISTINCT r.id_apartamento) as apartamentos_ocupados,
+                    COUNT(r.id) as total_reservas,
+                    SUM(DATEDIFF(r.fecha_salida, r.fecha_entrada)) as total_noches
+                FROM {$this->table} r
+                WHERE r.estado IN ('confirmada', 'completada')
+                AND r.fecha_entrada <= :fecha_fin 
+                AND r.fecha_salida >= :fecha_inicio";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([
+            ':fecha_inicio' => $fechaInicio,
+            ':fecha_fin' => $fechaFin
+        ]);
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Asegurar que siempre devolvemos valores válidos
+        return [
+            'apartamentos_ocupados' => (int)($result['apartamentos_ocupados'] ?? 0),
+            'total_reservas' => (int)($result['total_reservas'] ?? 0),
+            'total_noches' => (int)($result['total_noches'] ?? 0)
+        ];
     }
 
     /**

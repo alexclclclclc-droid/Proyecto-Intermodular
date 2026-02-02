@@ -176,11 +176,47 @@ class UsuarioDAO {
     }
 
     /**
-     * Contar usuarios por rol
+     * Obtener usuarios con filtros
      */
-    public function contarPorRol(): array {
-        $sql = "SELECT rol, COUNT(*) as total FROM {$this->table} 
-                WHERE activo = TRUE GROUP BY rol";
-        return $this->conn->query($sql)->fetchAll();
+    public function obtenerConFiltros(array $filtros = []): array {
+        $sql = "SELECT id, nombre, apellidos, email, telefono, rol, activo, 
+                       verificado, fecha_registro, ultimo_acceso 
+                FROM {$this->table} WHERE 1=1";
+        $params = [];
+        
+        if (!empty($filtros['rol'])) {
+            $sql .= " AND rol = :rol";
+            $params[':rol'] = $filtros['rol'];
+        }
+        
+        if (isset($filtros['estado']) && $filtros['estado'] !== '') {
+            $sql .= " AND activo = :activo";
+            $params[':activo'] = (int)$filtros['estado'];
+        }
+        
+        if (!empty($filtros['email'])) {
+            $sql .= " AND email LIKE :email";
+            $params[':email'] = '%' . $filtros['email'] . '%';
+        }
+        
+        $sql .= " ORDER BY fecha_registro DESC";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($params);
+        
+        return array_map(fn($row) => new Usuario($row), $stmt->fetchAll());
+    }
+
+    /**
+     * Cambiar rol de usuario
+     */
+    public function cambiarRol(int $id, string $rol): bool {
+        if (!in_array($rol, ['usuario', 'admin'])) {
+            return false;
+        }
+        
+        $sql = "UPDATE {$this->table} SET rol = :rol WHERE id = :id";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([':rol' => $rol, ':id' => $id]);
     }
 }

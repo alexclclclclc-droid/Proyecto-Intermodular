@@ -72,10 +72,10 @@ try {
             }
             
             // Verificar capacidad
-            if ($numHuespedes > $apartamento->getCapacidadAlojamiento()) {
+            if ($numHuespedes > $apartamento->getPlazas()) {
                 jsonResponse([
                     'success' => false, 
-                    'error' => "El apartamento tiene capacidad máxima de {$apartamento->getCapacidadAlojamiento()} personas"
+                    'error' => "El apartamento tiene capacidad máxima de {$apartamento->getPlazas()} personas"
                 ], 400);
             }
             
