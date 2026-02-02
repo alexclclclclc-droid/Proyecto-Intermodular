@@ -624,7 +624,9 @@ const ValidacionModule = {
                     }
                     break;
                 case 'match':
-                    const matchInput = document.querySelector(`[name="${ruleValue}"]`);
+                    // Buscar el campo dentro del mismo formulario para evitar conflictos
+                    const form = input.closest('form');
+                    const matchInput = form ? form.querySelector(`[name="${ruleValue}"]`) : document.querySelector(`[name="${ruleValue}"]`);
                     if (matchInput && value !== matchInput.value) {
                         error = 'Los valores no coinciden';
                     }
