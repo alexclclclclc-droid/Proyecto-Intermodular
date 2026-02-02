@@ -58,6 +58,11 @@ $viewsPath = $inViews ? './' : './views/';
                 <a href="<?= $viewsPath ?>mapa.php" class="nav-link <?= $currentFile === 'mapa.php' ? 'active' : '' ?>">Mapa</a>
                 <?php if (isLoggedIn()): ?>
                     <a href="<?= $viewsPath ?>mis-reservas.php" class="nav-link <?= $currentFile === 'mis-reservas.php' ? 'active' : '' ?>">Mis Reservas</a>
+                    <?php if (isAdmin()): ?>
+                        <a href="<?= $viewsPath ?>admin.php" class="nav-link <?= $currentFile === 'admin.php' ? 'active' : '' ?>" style="color: var(--color-accent); font-weight: 600;">
+                            🛠️ Panel Admin
+                        </a>
+                    <?php endif; ?>
                 <?php endif; ?>
             </nav>
             
