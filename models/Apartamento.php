@@ -7,7 +7,6 @@
 class Apartamento {
     private ?int $id;
     private string $n_registro;
-    private ?string $tipo_establecimiento;
     private string $nombre;
     private ?string $direccion;
     private ?string $codigo_postal;
@@ -21,7 +20,7 @@ class Apartamento {
     private ?string $email;
     private ?string $web;
     private bool $q_calidad;
-    private int $capacidad_alojamiento;
+    private int $plazas;
     private ?string $categoria;
     private ?string $especialidades;
     private ?float $gps_latitud;
@@ -33,7 +32,6 @@ class Apartamento {
     public function __construct(array $data = []) {
         $this->id = $data['id'] ?? null;
         $this->n_registro = $data['n_registro'] ?? '';
-        $this->tipo_establecimiento = $data['tipo_establecimiento'] ?? null;
         $this->nombre = $data['nombre'] ?? '';
         $this->direccion = $data['direccion'] ?? null;
         $this->codigo_postal = $data['codigo_postal'] ?? null;
@@ -47,7 +45,7 @@ class Apartamento {
         $this->email = $data['email'] ?? null;
         $this->web = $data['web'] ?? null;
         $this->q_calidad = (bool)($data['q_calidad'] ?? false);
-        $this->capacidad_alojamiento = (int)($data['capacidad_alojamiento'] ?? 0);
+        $this->plazas = (int)($data['plazas'] ?? 0);
         $this->categoria = $data['categoria'] ?? null;
         $this->especialidades = $data['especialidades'] ?? null;
         $this->gps_latitud = isset($data['gps_latitud']) ? (float)$data['gps_latitud'] : null;
@@ -60,7 +58,6 @@ class Apartamento {
     // Getters
     public function getId(): ?int { return $this->id; }
     public function getNRegistro(): string { return $this->n_registro; }
-    public function getTipoEstablecimiento(): ?string { return $this->tipo_establecimiento; }
     public function getNombre(): string { return $this->nombre; }
     public function getDireccion(): ?string { return $this->direccion; }
     public function getCodigoPostal(): ?string { return $this->codigo_postal; }
@@ -74,7 +71,7 @@ class Apartamento {
     public function getEmail(): ?string { return $this->email; }
     public function getWeb(): ?string { return $this->web; }
     public function getQCalidad(): bool { return $this->q_calidad; }
-    public function getCapacidadAlojamiento(): int { return $this->capacidad_alojamiento; }
+    public function getPlazas(): int { return $this->plazas; }
     public function getCategoria(): ?string { return $this->categoria; }
     public function getEspecialidades(): ?string { return $this->especialidades; }
     public function getGpsLatitud(): ?float { return $this->gps_latitud; }
@@ -86,7 +83,6 @@ class Apartamento {
     // Setters
     public function setId(?int $id): void { $this->id = $id; }
     public function setNRegistro(string $n_registro): void { $this->n_registro = $n_registro; }
-    public function setTipoEstablecimiento(?string $tipo): void { $this->tipo_establecimiento = $tipo; }
     public function setNombre(string $nombre): void { $this->nombre = $nombre; }
     public function setDireccion(?string $direccion): void { $this->direccion = $direccion; }
     public function setCodigoPostal(?string $cp): void { $this->codigo_postal = $cp; }
@@ -100,7 +96,7 @@ class Apartamento {
     public function setEmail(?string $email): void { $this->email = $email; }
     public function setWeb(?string $web): void { $this->web = $web; }
     public function setQCalidad(bool $q): void { $this->q_calidad = $q; }
-    public function setCapacidadAlojamiento(int $cap): void { $this->capacidad_alojamiento = $cap; }
+    public function setPlazas(int $plazas): void { $this->plazas = $plazas; }
     public function setCategoria(?string $cat): void { $this->categoria = $cat; }
     public function setEspecialidades(?string $esp): void { $this->especialidades = $esp; }
     public function setGpsLatitud(?float $lat): void { $this->gps_latitud = $lat; }
@@ -115,7 +111,6 @@ class Apartamento {
         return [
             'id' => $this->id,
             'n_registro' => $this->n_registro,
-            'tipo_establecimiento' => $this->tipo_establecimiento,
             'nombre' => $this->nombre,
             'direccion' => $this->direccion,
             'codigo_postal' => $this->codigo_postal,
@@ -129,7 +124,7 @@ class Apartamento {
             'email' => $this->email,
             'web' => $this->web,
             'q_calidad' => $this->q_calidad,
-            'capacidad_alojamiento' => $this->capacidad_alojamiento,
+            'plazas' => $this->plazas,
             'categoria' => $this->categoria,
             'especialidades' => $this->especialidades,
             'gps_latitud' => $this->gps_latitud,

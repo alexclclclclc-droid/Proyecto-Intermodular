@@ -1,7 +1,6 @@
 <?php
 /**
  * Servicio de sincronización con la API de datos abiertos de Castilla y León
- * Gestiona la descarga e importación de apartamentos turísticos
  */
 
 require_once __DIR__ . '/../config/config.php';
@@ -21,24 +20,18 @@ class ApiSyncService {
         $this->apartamentoDAO = new ApartamentoDAO();
     }
 
-    /**
-     * Ejecuta la sincronización completa
-     */
     public function sincronizar(): array {
         $this->log("Iniciando sincronización con API de datos abiertos...");
         $inicio = microtime(true);
 
         try {
-            // Obtener todos los apartamentos turísticos
             $apartamentos = $this->obtenerTodosLosRegistros();
             $total = count($apartamentos);
             $this->log("Obtenidos {$total} registros de la API");
 
-            // Procesar cada registro
             foreach ($apartamentos as $index => $record) {
                 $this->procesarRegistro($record);
                 
-                // Log de progreso cada 50 registros
                 if (($index + 1) % 50 === 0) {
                     $this->log("Procesados " . ($index + 1) . "/{$total} registros...");
                 }
@@ -55,9 +48,6 @@ class ApiSyncService {
         return $this->getResultado();
     }
 
-    /**
-     * Obtiene todos los registros de la API con paginación
-     */
     private function obtenerTodosLosRegistros(): array {
         $todos = [];
         $limit = 100;
@@ -78,20 +68,14 @@ class ApiSyncService {
             }
 
             $offset += $limit;
-            
-            // Pequeña pausa para no saturar la API
-            usleep(200000); // 200ms
+            usleep(200000);
 
         } while ($offset < $totalCount);
 
         return $todos;
     }
 
-    /**
-     * Realiza llamada a la API - URL ya filtrada por Apartamentos Turísticos
-     */
     private function llamarApi(int $limit = 100, int $offset = 0): array {
-        // URL con filtro correcto: refine=establecimiento:"Apartamentos Turísticos"
         $url = $this->apiUrl . '?limit=' . $limit . '&offset=' . $offset . '&refine=establecimiento%3A%22Apartamentos%20Tur%C3%ADsticos%22';
         
         $this->log("Llamando API: limit={$limit}, offset={$offset}");
@@ -118,7 +102,7 @@ class ApiSyncService {
         }
 
         if ($httpCode !== 200) {
-            throw new Exception("Error HTTP: {$httpCode} - URL: {$url}");
+            throw new Exception("Error HTTP: {$httpCode}");
         }
 
         $data = json_decode($response, true);
@@ -129,9 +113,6 @@ class ApiSyncService {
         return $data;
     }
 
-    /**
-     * Procesa un registro de la API
-     */
     private function procesarRegistro(array $record): void {
         try {
             $apartamento = $this->transformarRegistro($record);
@@ -141,10 +122,7 @@ class ApiSyncService {
                 return;
             }
 
-            // Verificar si existe
             $existente = $this->apartamentoDAO->obtenerPorNRegistro($apartamento->getNRegistro());
-            
-            // Guardar (insert o update)
             $this->apartamentoDAO->upsert($apartamento);
             
             if ($existente) {
@@ -161,16 +139,11 @@ class ApiSyncService {
         }
     }
 
-    /**
-     * Transforma un registro de la API al modelo Apartamento
-     */
     private function transformarRegistro(array $record): ?Apartamento {
-        // El número de registro es obligatorio
         if (empty($record['n_registro'])) {
             return null;
         }
 
-        // Extraer coordenadas GPS
         $latitud = null;
         $longitud = null;
         if (!empty($record['geo_point_2d'])) {
@@ -178,23 +151,20 @@ class ApiSyncService {
             $longitud = $record['geo_point_2d']['lon'] ?? null;
         }
 
-        // Procesar accesibilidad
         $accesible = false;
         if (!empty($record['accesible_a_personas_con_discapacidad'])) {
             $valor = strtolower($record['accesible_a_personas_con_discapacidad']);
             $accesible = in_array($valor, ['sí', 'si', 'yes', 'true', '1', 's']);
         }
 
-        // Procesar Q de calidad
         $qCalidad = false;
-        if (!empty($record['q_de_calidad_turistica'])) {
-            $valor = strtolower($record['q_de_calidad_turistica']);
+        if (!empty($record['q_calidad'])) {
+            $valor = strtolower($record['q_calidad']);
             $qCalidad = in_array($valor, ['sí', 'si', 'yes', 'true', '1', 's']);
         }
 
         return new Apartamento([
             'n_registro' => trim($record['n_registro']),
-            'tipo_establecimiento' => $record['tipo_establecimiento'] ?? 'Apartamentos Turísticos',
             'nombre' => trim($record['nombre'] ?? 'Sin nombre'),
             'direccion' => $record['direccion'] ?? null,
             'codigo_postal' => $record['c_postal'] ?? null,
@@ -208,7 +178,7 @@ class ApiSyncService {
             'email' => $this->limpiarEmail($record['email'] ?? null),
             'web' => $record['web'] ?? null,
             'q_calidad' => $qCalidad,
-            'capacidad_alojamiento' => (int)($record['capacidad_alojamiento'] ?? 0),
+            'plazas' => (int)($record['plazas'] ?? 0),
             'categoria' => $record['categoria'] ?? null,
             'especialidades' => $record['especialidades'] ?? null,
             'gps_latitud' => $latitud,
@@ -218,30 +188,18 @@ class ApiSyncService {
         ]);
     }
 
-    /**
-     * Limpia y valida un número de teléfono
-     */
     private function limpiarTelefono(?string $telefono): ?string {
         if (empty($telefono)) return null;
-        
         $limpio = preg_replace('/[^0-9+]/', '', $telefono);
-        
         return strlen($limpio) >= 9 ? $limpio : null;
     }
 
-    /**
-     * Limpia y valida un email
-     */
     private function limpiarEmail(?string $email): ?string {
         if (empty($email)) return null;
-        
         $email = strtolower(trim($email));
         return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : null;
     }
 
-    /**
-     * Agrega mensaje al log
-     */
     private function log(string $mensaje): void {
         $timestamp = date('Y-m-d H:i:s');
         $this->log[] = "[{$timestamp}] {$mensaje}";
@@ -250,9 +208,6 @@ class ApiSyncService {
         flush();
     }
 
-    /**
-     * Obtiene el resultado de la sincronización
-     */
     public function getResultado(): array {
         return [
             'success' => $this->errores === 0,

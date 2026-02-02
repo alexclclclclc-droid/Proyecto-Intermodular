@@ -7,7 +7,10 @@
 // CONFIGURACIÓN Y UTILIDADES
 // ===================================
 
-const API_BASE = '/Proyecto-Intermodular/api';
+// Detectar la ruta base automáticamente
+const pathParts = window.location.pathname.split('/');
+const projectFolder = pathParts[1];
+const API_BASE = '/' + projectFolder + '/api';
 
 /**
  * Realiza peticiones a la API con manejo de errores
@@ -285,7 +288,7 @@ const ApartamentosModule = {
             <article class="card" data-id="${apt.id}">
                 <div class="card-image">
                     <span class="card-image-placeholder">🏠</span>
-                    ${apt.capacidad_alojamiento > 6 ? '<span class="card-badge">Grande</span>' : ''}
+                    ${apt.plazas > 6 ? '<span class="card-badge">Grande</span>' : ''}
                 </div>
                 <div class="card-body">
                     <h3 class="card-title">${escapeHtml(apt.nombre)}</h3>
@@ -302,7 +305,7 @@ const ApartamentosModule = {
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="9" cy="7" r="4"></circle>
                             </svg>
-                            ${apt.capacidad_alojamiento || '?'} plazas
+                            ${apt.plazas || '?'} plazas
                         </span>
                         ${accesibleBadge}
                     </div>
@@ -408,7 +411,7 @@ const ApartamentosModule = {
             
             <div style="margin-bottom: var(--space-lg);">
                 <h4 style="margin-bottom: var(--space-sm);">ℹ️ Información</h4>
-                <p><strong>Capacidad:</strong> ${apt.capacidad_alojamiento || 'No especificada'} plazas</p>
+                <p><strong>Capacidad:</strong> ${apt.plazas || 'No especificada'} plazas</p>
                 <p><strong>Accesible:</strong> ${apt.accesible ? 'Sí' : 'No'}</p>
                 ${apt.categoria ? `<p><strong>Categoría:</strong> ${escapeHtml(apt.categoria)}</p>` : ''}
             </div>
@@ -624,7 +627,6 @@ const ValidacionModule = {
                     }
                     break;
                 case 'match':
-                    // Buscar el campo dentro del mismo formulario para evitar conflictos
                     const form = input.closest('form');
                     const matchInput = form ? form.querySelector(`[name="${ruleValue}"]`) : document.querySelector(`[name="${ruleValue}"]`);
                     if (matchInput && value !== matchInput.value) {
@@ -679,8 +681,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inicializar módulo de apartamentos si existe el grid
     if (document.getElementById('apartamentos-grid')) {
         ApartamentosModule.init();
-        // Solo cargar automáticamente si no hay filtros predefinidos desde URL
-        // (los filtros desde URL se aplicarán desde el script en apartamentos.php)
         const urlParams = new URLSearchParams(window.location.search);
         if (!urlParams.has('provincia') && !urlParams.has('municipio')) {
             ApartamentosModule.loadApartamentos();

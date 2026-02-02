@@ -99,8 +99,9 @@ include ROOT_PATH . 'views/partials/header.php';
             </div>
         </div>
     </section>
-<!-- CTA Section --> 
-<section class="py-4" style="background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary)); color: white;">
+
+    <!-- CTA Section -->
+    <section class="py-4" style="background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary)); color: white;">
         <div class="container text-center">
             <h2 style="color: white; margin-bottom: var(--space-md);">¿Listo para tu próxima escapada?</h2>
             <p style="max-width: 600px; margin: 0 auto var(--space-xl); opacity: 0.9;">

@@ -20,17 +20,16 @@ class ApartamentoDAO {
      */
     public function upsert(Apartamento $apartamento): bool {
         $sql = "INSERT INTO {$this->table} 
-                (n_registro, tipo_establecimiento, nombre, direccion, codigo_postal, 
+                (n_registro, nombre, direccion, codigo_postal, 
                  provincia, municipio, localidad, nucleo, telefono_1, telefono_2, 
-                 telefono_3, email, web, q_calidad, capacidad_alojamiento, categoria,
+                 telefono_3, email, web, q_calidad, plazas, categoria,
                  especialidades, gps_latitud, gps_longitud, accesible, fecha_sincronizacion)
                 VALUES 
-                (:n_registro, :tipo_establecimiento, :nombre, :direccion, :codigo_postal,
+                (:n_registro, :nombre, :direccion, :codigo_postal,
                  :provincia, :municipio, :localidad, :nucleo, :telefono_1, :telefono_2,
-                 :telefono_3, :email, :web, :q_calidad, :capacidad_alojamiento, :categoria,
+                 :telefono_3, :email, :web, :q_calidad, :plazas, :categoria,
                  :especialidades, :gps_latitud, :gps_longitud, :accesible, NOW())
                 ON DUPLICATE KEY UPDATE
-                tipo_establecimiento = VALUES(tipo_establecimiento),
                 nombre = VALUES(nombre),
                 direccion = VALUES(direccion),
                 codigo_postal = VALUES(codigo_postal),
@@ -44,7 +43,7 @@ class ApartamentoDAO {
                 email = VALUES(email),
                 web = VALUES(web),
                 q_calidad = VALUES(q_calidad),
-                capacidad_alojamiento = VALUES(capacidad_alojamiento),
+                plazas = VALUES(plazas),
                 categoria = VALUES(categoria),
                 especialidades = VALUES(especialidades),
                 gps_latitud = VALUES(gps_latitud),
@@ -56,7 +55,6 @@ class ApartamentoDAO {
         
         return $stmt->execute([
             ':n_registro' => $apartamento->getNRegistro(),
-            ':tipo_establecimiento' => $apartamento->getTipoEstablecimiento(),
             ':nombre' => $apartamento->getNombre(),
             ':direccion' => $apartamento->getDireccion(),
             ':codigo_postal' => $apartamento->getCodigoPostal(),
@@ -70,7 +68,7 @@ class ApartamentoDAO {
             ':email' => $apartamento->getEmail(),
             ':web' => $apartamento->getWeb(),
             ':q_calidad' => $apartamento->getQCalidad() ? 1 : 0,
-            ':capacidad_alojamiento' => $apartamento->getCapacidadAlojamiento(),
+            ':plazas' => $apartamento->getPlazas(),
             ':categoria' => $apartamento->getCategoria(),
             ':especialidades' => $apartamento->getEspecialidades(),
             ':gps_latitud' => $apartamento->getGpsLatitud(),
@@ -161,7 +159,7 @@ class ApartamentoDAO {
         }
 
         if (!empty($filtros['capacidad_min'])) {
-            $where[] = 'capacidad_alojamiento >= :capacidad_min';
+            $where[] = 'plazas >= :capacidad_min';
             $params[':capacidad_min'] = (int)$filtros['capacidad_min'];
         }
 
@@ -212,7 +210,7 @@ class ApartamentoDAO {
         }
 
         if (!empty($filtros['capacidad_min'])) {
-            $where[] = 'capacidad_alojamiento >= :capacidad_min';
+            $where[] = 'plazas >= :capacidad_min';
             $params[':capacidad_min'] = (int)$filtros['capacidad_min'];
         }
 
@@ -266,7 +264,14 @@ class ApartamentoDAO {
      * Obtener estadísticas por provincia
      */
     public function obtenerEstadisticasPorProvincia(): array {
-        $sql = "SELECT * FROM vista_estadisticas_provincia";
+        $sql = "SELECT provincia, COUNT(*) as total_apartamentos, 
+                       SUM(plazas) as plazas_totales,
+                       SUM(CASE WHEN accesible = TRUE THEN 1 ELSE 0 END) as accesibles,
+                       ROUND(AVG(plazas), 1) as media_plazas
+                FROM {$this->table} 
+                WHERE activo = TRUE
+                GROUP BY provincia
+                ORDER BY total_apartamentos DESC";
         return $this->conn->query($sql)->fetchAll();
     }
 
@@ -274,11 +279,26 @@ class ApartamentoDAO {
      * Buscar apartamentos cercanos a coordenadas
      */
     public function buscarCercanos(float $latitud, float $longitud, int $radioKm = 10): array {
-        $sql = "CALL buscar_cercanos(:lat, :lng, :radio)";
+        // Fórmula Haversine directamente en SQL
+        $sql = "SELECT *, 
+                (6371 * ACOS(
+                    COS(RADIANS(:lat)) * COS(RADIANS(gps_latitud)) * 
+                    COS(RADIANS(gps_longitud) - RADIANS(:lng)) + 
+                    SIN(RADIANS(:lat2)) * SIN(RADIANS(gps_latitud))
+                )) AS distancia
+                FROM {$this->table}
+                WHERE activo = TRUE 
+                AND gps_latitud IS NOT NULL 
+                AND gps_longitud IS NOT NULL
+                HAVING distancia <= :radio
+                ORDER BY distancia
+                LIMIT 50";
+        
         $stmt = $this->conn->prepare($sql);
         $stmt->execute([
             ':lat' => $latitud,
             ':lng' => $longitud,
+            ':lat2' => $latitud,
             ':radio' => $radioKm
         ]);
         return array_map(fn($row) => new Apartamento($row), $stmt->fetchAll());
@@ -297,7 +317,7 @@ class ApartamentoDAO {
         }
 
         $sql = "SELECT id, nombre, provincia, municipio, localidad, nucleo, gps_latitud, gps_longitud, 
-                       capacidad_alojamiento, accesible 
+                       plazas, accesible 
                 FROM {$this->table} 
                 WHERE " . implode(' AND ', $where);
         
