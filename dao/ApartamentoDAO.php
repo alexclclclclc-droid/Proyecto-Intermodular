@@ -229,7 +229,7 @@ class ApartamentoDAO {
      * Obtener lista de provincias
      */
     public function obtenerProvincias(): array {
-        $sql = "SELECT DISTINCT provincia, COUNT(*) as total 
+        $sql = "SELECT provincia, COUNT(*) as total, SUM(CASE WHEN gps_latitud IS NOT NULL AND gps_longitud IS NOT NULL THEN 1 ELSE 0 END) as con_gps 
                 FROM {$this->table} 
                 WHERE activo = TRUE AND provincia IS NOT NULL 
                 GROUP BY provincia 
@@ -257,6 +257,17 @@ class ApartamentoDAO {
      */
     public function contarTotal(): int {
         $sql = "SELECT COUNT(*) FROM {$this->table} WHERE activo = TRUE";
+        return (int)$this->conn->query($sql)->fetchColumn();
+    }
+
+    /**
+     * Contar apartamentos con coordenadas GPS
+     */
+    public function contarConGPS(): int {
+        $sql = "SELECT COUNT(*) FROM {$this->table} 
+                WHERE activo = TRUE 
+                AND gps_latitud IS NOT NULL 
+                AND gps_longitud IS NOT NULL";
         return (int)$this->conn->query($sql)->fetchColumn();
     }
 
