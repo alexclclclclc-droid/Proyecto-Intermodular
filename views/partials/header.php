@@ -39,6 +39,8 @@ $viewsPath = $inViews ? './' : './views/';
     <?php endif; ?>
 </head>
 <body>
+    <!-- Script de sincronización automática -->
+    <script src="<?= $basePath ?>public/js/auto-sync.js"></script>
     <header class="header">
         <div class="container header-inner">
             <a href="<?= $basePath ?>index.php" class="logo">

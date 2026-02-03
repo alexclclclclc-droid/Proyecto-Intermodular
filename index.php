@@ -5,6 +5,22 @@
 define('ROOT_PATH', __DIR__ . '/');
 require_once ROOT_PATH . 'config/config.php';
 require_once ROOT_PATH . 'utils/gps_generator.php';
+require_once ROOT_PATH . 'utils/auto_sync.php';
+
+// Ejecutar sincronización automática si es necesario (en segundo plano)
+try {
+    $autoSync = new AutoSyncManager();
+    if ($autoSync->needsSync()) {
+        // Ejecutar en segundo plano para no bloquear la carga de la página
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+        $autoSync->executeAutoSync();
+    }
+} catch (Exception $e) {
+    // Error silencioso - no interrumpir la carga de la página
+    error_log("Error en auto-sync: " . $e->getMessage());
+}
 
 // Generar coordenadas GPS automáticamente si es necesario (silencioso)
 try {

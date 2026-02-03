@@ -25,9 +25,21 @@ class ApiSyncService {
         $inicio = microtime(true);
 
         try {
+            // Verificar conexión primero
+            if (!$this->probarConexion()) {
+                throw new Exception("No se pudo conectar con la API externa");
+            }
+            
             $apartamentos = $this->obtenerTodosLosRegistros();
             $total = count($apartamentos);
             $this->log("Obtenidos {$total} registros de la API");
+
+            if ($total === 0) {
+                $this->log("No se encontraron registros en la API externa");
+                $duracion = round(microtime(true) - $inicio, 2);
+                $this->log("Sincronización completada en {$duracion} segundos - Sin datos para procesar");
+                return $this->getResultado();
+            }
 
             foreach ($apartamentos as $index => $record) {
                 $this->procesarRegistro($record);
@@ -38,7 +50,12 @@ class ApiSyncService {
             }
 
             $duracion = round(microtime(true) - $inicio, 2);
-            $this->log("Sincronización completada en {$duracion} segundos");
+            
+            if ($this->registrosProcesados === 0) {
+                $this->log("Sincronización completada en {$duracion} segundos - No hay cambios nuevos");
+            } else {
+                $this->log("Sincronización completada en {$duracion} segundos");
+            }
 
         } catch (Exception $e) {
             $this->log("ERROR: " . $e->getMessage());
@@ -217,5 +234,36 @@ class ApiSyncService {
             'errores' => $this->errores,
             'log' => $this->log
         ];
+    }
+    
+    /**
+     * Probar conexión con la API externa
+     */
+    public function probarConexion(): bool {
+        try {
+            $testUrl = $this->apiUrl . '?limit=1';
+            
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => 10,
+                    'method' => 'GET',
+                    'header' => 'User-Agent: ApartamentosCyL/1.0'
+                ]
+            ]);
+            
+            $response = @file_get_contents($testUrl, false, $context);
+            
+            if ($response === false) {
+                return false;
+            }
+            
+            $data = json_decode($response, true);
+            
+            // Verificar que la respuesta tenga la estructura esperada
+            return isset($data['results']) && is_array($data['results']);
+            
+        } catch (Exception $e) {
+            return false;
+        }
     }
 }

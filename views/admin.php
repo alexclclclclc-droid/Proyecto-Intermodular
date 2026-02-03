@@ -269,17 +269,43 @@ include ROOT_PATH . 'views/partials/header.php';
         <section id="section-sincronizacion" class="admin-section">
             <div class="admin-section-header">
                 <h1>Herramientas de Sincronización</h1>
-                <p class="text-muted">Gestionar sincronización con APIs externas</p>
+                <p class="text-muted">Gestionar sincronización con APIs externas y coordenadas GPS</p>
             </div>
             
             <!-- Estado actual -->
             <div class="admin-card">
                 <div class="admin-card-header">
                     <h3>Estado de Sincronización</h3>
+                    <button onclick="cargarEstadoSincronizacion()" class="btn btn-secondary btn-sm">
+                        🔄 Actualizar
+                    </button>
                 </div>
                 <div class="admin-card-body">
                     <div id="sync-status" class="admin-sync-status">
                         <!-- Contenido dinámico -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Estado de Sincronización Automática -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h3>Sincronización Automática</h3>
+                    <button onclick="cargarEstadoAutoSync()" class="btn btn-secondary btn-sm">
+                        🔄 Actualizar
+                    </button>
+                </div>
+                <div class="admin-card-body">
+                    <div id="auto-sync-status" class="admin-sync-status">
+                        <!-- Contenido dinámico -->
+                    </div>
+                    <div style="margin-top: 15px; text-align: center;">
+                        <button onclick="forzarSincronizacionAuto()" class="btn btn-warning btn-sm">
+                            ⚡ Forzar Sincronización
+                        </button>
+                        <button onclick="verLogsAutoSync()" class="btn btn-info btn-sm">
+                            📋 Ver Logs
+                        </button>
                     </div>
                 </div>
             </div>
@@ -291,9 +317,17 @@ include ROOT_PATH . 'views/partials/header.php';
                 </div>
                 <div class="admin-card-body">
                     <div class="admin-sync-controls">
-                        <button id="btn-ejecutar-sync" class="btn btn-primary">
-                            🔄 Ejecutar Sincronización Manual
-                        </button>
+                        <div class="sync-buttons-grid">
+                            <button id="btn-ejecutar-sync" class="btn btn-primary">
+                                🔄 Sincronización Completa
+                            </button>
+                            <button onclick="probarConexionAPI()" class="btn btn-secondary">
+                                🔌 Probar Conexión API
+                            </button>
+                            <button onclick="generarGPSManual()" class="btn btn-info">
+                                🗺️ Generar GPS
+                            </button>
+                        </div>
                         
                         <div id="sync-progress" class="admin-sync-progress" style="display: none;">
                             <div class="admin-progress-bar">
@@ -313,6 +347,9 @@ include ROOT_PATH . 'views/partials/header.php';
             <div class="admin-card">
                 <div class="admin-card-header">
                     <h3>Historial de Sincronizaciones</h3>
+                    <button onclick="cargarHistorialSincronizacion()" class="btn btn-secondary btn-sm">
+                        🔄 Actualizar
+                    </button>
                 </div>
                 <div class="admin-card-body">
                     <div id="sync-history">
@@ -395,6 +432,9 @@ include ROOT_PATH . 'views/partials/header.php';
 </div>
 
 <?php include ROOT_PATH . 'views/partials/footer.php'; ?>
+
+<!-- JavaScript principal (incluye apiRequest) -->
+<script src="../public/js/app.js"></script>
 
 <!-- Estilos específicos del panel admin -->
 <style>
@@ -728,6 +768,85 @@ include ROOT_PATH . 'views/partials/header.php';
     background: #fef2f2;
     color: #991b1b;
     border: 1px solid #fecaca;
+}
+
+.sync-result-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--space-md);
+    margin: var(--space-md) 0;
+}
+
+.sync-stat {
+    text-align: center;
+    padding: var(--space-sm);
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-md);
+}
+
+.sync-stat strong {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+}
+
+.sync-stat span {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+}
+
+.admin-sync-warning {
+    grid-column: 1 / -1;
+    margin-top: var(--space-md);
+}
+
+.admin-empty-state {
+    text-align: center;
+    padding: var(--space-xl);
+    color: var(--color-text-muted);
+}
+
+.admin-empty-icon {
+    font-size: 3rem;
+    margin-bottom: var(--space-md);
+}
+
+.admin-empty-state h3 {
+    margin-bottom: var(--space-sm);
+    color: var(--color-text);
+}
+
+.status-success {
+    color: var(--color-success);
+    font-weight: 500;
+}
+
+.status-error {
+    color: var(--color-error);
+    font-weight: 500;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.sync-buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
 }
 
 /* Estados y badges */
@@ -1607,29 +1726,528 @@ function cargarReservasEjemplo() {
 function cargarSincronizacion() {
     console.log('Cargando sincronización...');
     
+    // Cargar estado actual
+    cargarEstadoSincronizacion();
+    
+    // Cargar estado de auto-sync
+    cargarEstadoAutoSync();
+    
+    // Cargar historial
+    cargarHistorialSincronizacion();
+    
+    // Configurar eventos del botón de sincronización
+    const btnEjecutarSync = document.getElementById('btn-ejecutar-sync');
+    if (btnEjecutarSync) {
+        btnEjecutarSync.addEventListener('click', ejecutarSincronizacion);
+    }
+}
+
+async function cargarEstadoSincronizacion() {
     const container = document.getElementById('sync-status');
-    if (container) {
+    if (!container) return;
+    
+    try {
         container.innerHTML = `
             <div class="admin-sync-info">
-                <div class="admin-sync-info-value">28/02/2024</div>
-                <div class="admin-sync-info-label">Última Sincronización</div>
+                <div class="admin-sync-info-value">
+                    <div class="loading-spinner"></div>
+                </div>
+                <div class="admin-sync-info-label">Cargando...</div>
             </div>
+        `;
+        
+        const response = await apiRequest('admin_sync.php?action=status');
+        
+        if (response.success) {
+            const data = response.data;
+            const ultimaSync = data.ultima_sincronizacion ? 
+                new Date(data.ultima_sincronizacion).toLocaleString('es-ES') : 
+                'Nunca';
+            
+            container.innerHTML = `
+                <div class="admin-sync-info">
+                    <div class="admin-sync-info-value">${ultimaSync}</div>
+                    <div class="admin-sync-info-label">Última Sincronización</div>
+                </div>
+                <div class="admin-sync-info">
+                    <div class="admin-sync-info-value">${data.total_apartamentos}</div>
+                    <div class="admin-sync-info-label">Total Apartamentos</div>
+                </div>
+                <div class="admin-sync-info">
+                    <div class="admin-sync-info-value">${data.apartamentos_sincronizados}</div>
+                    <div class="admin-sync-info-label">Sincronizados</div>
+                </div>
+                <div class="admin-sync-info">
+                    <div class="admin-sync-info-value">${data.apartamentos_con_gps}</div>
+                    <div class="admin-sync-info-label">Con GPS</div>
+                </div>
+                <div class="admin-sync-info">
+                    <div class="admin-sync-info-value">${data.porcentaje_sincronizado}%</div>
+                    <div class="admin-sync-info-label">% Sincronizado</div>
+                </div>
+                <div class="admin-sync-info">
+                    <div class="admin-sync-info-value">${data.porcentaje_gps}%</div>
+                    <div class="admin-sync-info-label">% Con GPS</div>
+                </div>
+            `;
+            
+            // Mostrar advertencias si es necesario
+            if (data.apartamentos_sin_gps > 0) {
+                const warning = document.createElement('div');
+                warning.className = 'admin-sync-warning';
+                warning.innerHTML = `
+                    <div class="alert alert-warning">
+                        ⚠️ <strong>${data.apartamentos_sin_gps} apartamentos sin coordenadas GPS</strong>
+                        <button onclick="generarGPSManual()" class="btn btn-sm btn-warning" style="margin-left: 10px;">
+                            🗺️ Generar GPS
+                        </button>
+                    </div>
+                `;
+                container.appendChild(warning);
+            }
+            
+        } else {
+            throw new Error(response.error || 'Error cargando estado');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando estado de sincronización:', error);
+        container.innerHTML = `
             <div class="admin-sync-info">
-                <div class="admin-sync-info-value">1,247</div>
-                <div class="admin-sync-info-label">Registros Procesados</div>
+                <div class="admin-sync-info-value">❌</div>
+                <div class="admin-sync-info-label">Error cargando estado</div>
             </div>
+        `;
+        mostrarToast('Error cargando estado de sincronización', 'error');
+    }
+}
+
+async function cargarEstadoAutoSync() {
+    const container = document.getElementById('auto-sync-status');
+    if (!container) return;
+    
+    try {
+        container.innerHTML = `
             <div class="admin-sync-info">
-                <div class="admin-sync-info-value">23</div>
-                <div class="admin-sync-info-label">Nuevos</div>
+                <div class="admin-sync-info-value">
+                    <div class="loading-spinner"></div>
+                </div>
+                <div class="admin-sync-info-label">Cargando...</div>
             </div>
+        `;
+        
+        const response = await apiRequest('auto_sync_endpoint.php?action=status');
+        
+        if (response.success) {
+            const data = response.data;
+            
+            container.innerHTML = `
+                <div class="admin-sync-info">
+                    <div class="admin-sync-info-value">${data.enabled ? '✅' : '❌'}</div>
+                    <div class="admin-sync-info-label">Estado</div>
+                </div>
+                <div class="admin-sync-info">
+                    <div class="admin-sync-info-value">${data.last_sync}</div>
+                    <div class="admin-sync-info-label">Última Ejecución</div>
+                </div>
+                <div class="admin-sync-info">
+                    <div class="admin-sync-info-value">${data.next_sync}</div>
+                    <div class="admin-sync-info-label">Próxima Ejecución</div>
+                </div>
+                <div class="admin-sync-info">
+                    <div class="admin-sync-info-value">${data.interval_hours}h</div>
+                    <div class="admin-sync-info-label">Intervalo</div>
+                </div>
+                <div class="admin-sync-info">
+                    <div class="admin-sync-info-value">${data.needs_sync ? '⏰' : '✅'}</div>
+                    <div class="admin-sync-info-label">${data.needs_sync ? 'Pendiente' : 'Actualizado'}</div>
+                </div>
+                <div class="admin-sync-info">
+                    <div class="admin-sync-info-value">${data.is_locked ? '🔒' : '🔓'}</div>
+                    <div class="admin-sync-info-label">${data.is_locked ? 'Ejecutando' : 'Disponible'}</div>
+                </div>
+            `;
+            
+        } else {
+            throw new Error(response.error || 'Error cargando estado auto-sync');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando estado de auto-sync:', error);
+        container.innerHTML = `
             <div class="admin-sync-info">
-                <div class="admin-sync-info-value">156</div>
-                <div class="admin-sync-info-label">Actualizados</div>
+                <div class="admin-sync-info-value">❌</div>
+                <div class="admin-sync-info-label">Error cargando estado</div>
+            </div>
+        `;
+        mostrarToast('Error cargando estado de sincronización automática', 'error');
+    }
+}
+
+async function forzarSincronizacionAuto() {
+    try {
+        mostrarToast('Forzando sincronización automática...', 'info');
+        
+        const response = await apiRequest('auto_sync_endpoint.php?action=force', {
+            method: 'POST'
+        });
+        
+        if (response.success) {
+            const result = response.data;
+            
+            if (result.skipped) {
+                mostrarToast('Sincronización no necesaria - datos actualizados', 'info');
+            } else if (result.success) {
+                const syncResult = result.sync_result;
+                mostrarToast(`Sincronización forzada completada: ${syncResult.nuevos} nuevos, ${syncResult.actualizados} actualizados`, 'success');
+            } else {
+                mostrarToast('Sincronización completada con errores', 'warning');
+            }
+            
+            // Recargar estados
+            setTimeout(() => {
+                cargarEstadoSincronizacion();
+                cargarEstadoAutoSync();
+            }, 1000);
+            
+        } else {
+            throw new Error(response.error || 'Error forzando sincronización');
+        }
+        
+    } catch (error) {
+        console.error('Error forzando sincronización:', error);
+        mostrarToast('Error forzando sincronización: ' + error.message, 'error');
+    }
+}
+
+async function verLogsAutoSync() {
+    try {
+        const response = await apiRequest('auto_sync_endpoint.php?action=logs');
+        
+        if (response.success) {
+            const logs = response.data;
+            
+            let logHtml = '<h4>📋 Logs de Sincronización Automática</h4>';
+            
+            if (logs.length === 0) {
+                logHtml += '<p>No hay logs disponibles.</p>';
+            } else {
+                logHtml += '<div style="max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px;">';
+                
+                logs.reverse().forEach(log => {
+                    const timestamp = new Date(log.timestamp).toLocaleString('es-ES');
+                    const result = log.result;
+                    const status = result.success ? '✅' : '❌';
+                    
+                    logHtml += `
+                        <div style="border-bottom: 1px solid #eee; padding: 10px; margin-bottom: 5px;">
+                            <strong>${status} ${timestamp}</strong><br>
+                            Procesados: ${result.procesados} | Nuevos: ${result.nuevos} | Actualizados: ${result.actualizados} | Errores: ${result.errores}
+                        </div>
+                    `;
+                });
+                
+                logHtml += '</div>';
+            }
+            
+            // Mostrar en modal
+            const modal = document.getElementById('modal-confirmacion');
+            if (modal) {
+                const titulo = modal.querySelector('.modal-title');
+                const mensaje = modal.querySelector('#confirmacion-mensaje');
+                const btnConfirmar = modal.querySelector('#btn-confirmar-accion');
+                
+                titulo.textContent = 'Logs de Sincronización Automática';
+                mensaje.innerHTML = logHtml;
+                btnConfirmar.textContent = 'Cerrar';
+                btnConfirmar.className = 'btn btn-secondary';
+                btnConfirmar.onclick = () => modal.classList.remove('active');
+                
+                modal.classList.add('active');
+            }
+            
+        } else {
+            throw new Error(response.error || 'Error obteniendo logs');
+        }
+        
+    } catch (error) {
+        console.error('Error obteniendo logs:', error);
+        mostrarToast('Error obteniendo logs: ' + error.message, 'error');
+    }
+}
+
+async function cargarHistorialSincronizacion() {
+    const container = document.getElementById('sync-history');
+    if (!container) return;
+    
+    try {
+        container.innerHTML = '<div class="loading-spinner"></div> Cargando historial...';
+        
+        const response = await apiRequest('admin_sync.php?action=history');
+        
+        if (response.success && response.data.length > 0) {
+            container.innerHTML = `
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Procesados</th>
+                                <th>Nuevos</th>
+                                <th>Actualizados</th>
+                                <th>GPS Generados</th>
+                                <th>Errores</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${response.data.map(item => `
+                                <tr>
+                                    <td>${new Date(item.fecha).toLocaleString('es-ES')}</td>
+                                    <td>${item.procesados}</td>
+                                    <td><span class="badge badge-success">${item.nuevos}</span></td>
+                                    <td><span class="badge badge-info">${item.actualizados}</span></td>
+                                    <td><span class="badge badge-primary">${item.gps_generados || 0}</span></td>
+                                    <td>${item.errores > 0 ? `<span class="badge badge-error">${item.errores}</span>` : '0'}</td>
+                                    <td>
+                                        ${item.errores === 0 ? 
+                                            '<span class="status-success">✅ Exitosa</span>' : 
+                                            '<span class="status-error">❌ Con errores</span>'
+                                        }
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            container.innerHTML = `
+                <div class="admin-empty-state">
+                    <div class="admin-empty-icon">📋</div>
+                    <h3>Sin historial de sincronizaciones</h3>
+                    <p>No se han ejecutado sincronizaciones anteriormente</p>
+                </div>
+            `;
+        }
+        
+    } catch (error) {
+        console.error('Error cargando historial:', error);
+        container.innerHTML = `
+            <div class="alert alert-error">
+                ❌ Error cargando historial de sincronizaciones
             </div>
         `;
     }
+}
+
+async function ejecutarSincronizacion() {
+    const btnEjecutar = document.getElementById('btn-ejecutar-sync');
+    const progressContainer = document.getElementById('sync-progress');
+    const resultContainer = document.getElementById('sync-result');
     
-    mostrarToast('Sincronización cargada con datos de ejemplo', 'info');
+    if (!btnEjecutar || !progressContainer || !resultContainer) return;
+    
+    try {
+        // Mostrar confirmación
+        if (!confirm('¿Estás seguro de ejecutar la sincronización? Este proceso puede tardar varios minutos.')) {
+            return;
+        }
+        
+        // Mostrar estado de carga
+        btnEjecutar.disabled = true;
+        btnEjecutar.innerHTML = '⏳ Sincronizando...';
+        progressContainer.style.display = 'block';
+        resultContainer.style.display = 'none';
+        
+        // Animar barra de progreso
+        const progressFill = progressContainer.querySelector('.admin-progress-fill');
+        if (progressFill) {
+            progressFill.style.width = '0%';
+            progressFill.style.transition = 'width 30s linear';
+            setTimeout(() => {
+                progressFill.style.width = '90%';
+            }, 100);
+        }
+        
+        // Ejecutar sincronización
+        let response;
+        try {
+            response = await apiRequest('admin_sync.php?action=execute', {
+                method: 'POST'
+            });
+        } catch (apiError) {
+            // Manejar errores específicos de la API
+            if (apiError.message && apiError.message.includes('Assignment to constant')) {
+                throw new Error('No hay datos nuevos para sincronizar. Todos los apartamentos están actualizados.');
+            }
+            throw apiError;
+        }
+        
+        // Completar barra de progreso
+        if (progressFill) {
+            progressFill.style.width = '100%';
+        }
+        
+        setTimeout(() => {
+            progressContainer.style.display = 'none';
+            
+            if (response.success) {
+                const syncResult = response.data.sync_result;
+                const gpsResult = response.data.gps_result;
+                
+                // Verificar si no hay nada que sincronizar
+                if (syncResult.procesados === 0 && syncResult.errores === 0) {
+                    resultContainer.className = 'admin-sync-result success';
+                    resultContainer.innerHTML = `
+                        <h4>ℹ️ Sincronización Completada</h4>
+                        <p>No hay datos nuevos para sincronizar. Todos los apartamentos están actualizados.</p>
+                        <div class="sync-result-stats">
+                            <div class="sync-stat">
+                                <strong>0</strong>
+                                <span>Nuevos</span>
+                            </div>
+                            <div class="sync-stat">
+                                <strong>0</strong>
+                                <span>Actualizados</span>
+                            </div>
+                            <div class="sync-stat">
+                                <strong>0</strong>
+                                <span>Errores</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    mostrarToast('No hay datos nuevos para sincronizar', 'info');
+                } else {
+                    // Mostrar resultados normales
+                    resultContainer.className = 'admin-sync-result success';
+                    resultContainer.innerHTML = `
+                        <h4>✅ Sincronización Completada</h4>
+                        <div class="sync-result-stats">
+                            <div class="sync-stat">
+                                <strong>${syncResult.procesados}</strong>
+                                <span>Procesados</span>
+                            </div>
+                            <div class="sync-stat">
+                                <strong>${syncResult.nuevos}</strong>
+                                <span>Nuevos</span>
+                            </div>
+                            <div class="sync-stat">
+                                <strong>${syncResult.actualizados}</strong>
+                                <span>Actualizados</span>
+                            </div>
+                            ${gpsResult && gpsResult.success ? `
+                            <div class="sync-stat">
+                                <strong>${gpsResult.actualizados || 0}</strong>
+                                <span>GPS Generados</span>
+                            </div>
+                            ` : ''}
+                            <div class="sync-stat">
+                                <strong>${syncResult.errores}</strong>
+                                <span>Errores</span>
+                            </div>
+                        </div>
+                        ${syncResult.errores > 0 ? `
+                        <div class="alert alert-warning" style="margin-top: 15px;">
+                            ⚠️ Se encontraron ${syncResult.errores} errores durante la sincronización
+                        </div>
+                        ` : ''}
+                    `;
+                    
+                    mostrarToast('Sincronización completada exitosamente', 'success');
+                }
+                
+                // Recargar estado y historial
+                setTimeout(() => {
+                    cargarEstadoSincronizacion();
+                    cargarHistorialSincronizacion();
+                }, 1000);
+                
+            } else {
+                throw new Error(response.error || 'Error en la sincronización');
+            }
+            
+            resultContainer.style.display = 'block';
+            
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Error ejecutando sincronización:', error);
+        
+        progressContainer.style.display = 'none';
+        
+        // Manejar diferentes tipos de errores
+        let errorMessage = error.message;
+        let isNoDataError = false;
+        
+        if (errorMessage.includes('No hay datos nuevos') || 
+            errorMessage.includes('Assignment to constant') ||
+            errorMessage.includes('todos los apartamentos están actualizados')) {
+            errorMessage = 'No hay datos nuevos para sincronizar. Todos los apartamentos están actualizados.';
+            isNoDataError = true;
+        }
+        
+        resultContainer.className = isNoDataError ? 'admin-sync-result success' : 'admin-sync-result error';
+        resultContainer.innerHTML = `
+            <h4>${isNoDataError ? 'ℹ️ Sin Cambios' : '❌ Error en la Sincronización'}</h4>
+            <p>${errorMessage}</p>
+            ${!isNoDataError ? `
+            <button onclick="ejecutarSincronizacion()" class="btn btn-primary btn-sm">
+                🔄 Reintentar
+            </button>
+            ` : ''}
+        `;
+        resultContainer.style.display = 'block';
+        
+        mostrarToast(isNoDataError ? 'No hay datos nuevos para sincronizar' : 'Error ejecutando sincronización: ' + errorMessage, isNoDataError ? 'info' : 'error');
+        
+    } finally {
+        // Restaurar botón
+        btnEjecutar.disabled = false;
+        btnEjecutar.innerHTML = '🔄 Sincronización Completa';
+    }
+}
+
+async function generarGPSManual() {
+    try {
+        const response = await apiRequest('admin_sync.php?action=generate_gps', {
+            method: 'POST'
+        });
+        
+        if (response.success) {
+            mostrarToast(`GPS generado para ${response.data.actualizados} apartamentos`, 'success');
+            cargarEstadoSincronizacion(); // Recargar estado
+        } else {
+            throw new Error(response.data.error || 'Error generando GPS');
+        }
+        
+    } catch (error) {
+        console.error('Error generando GPS:', error);
+        mostrarToast('Error generando coordenadas GPS: ' + error.message, 'error');
+    }
+}
+
+async function probarConexionAPI() {
+    try {
+        mostrarToast('Probando conexión con la API externa...', 'info');
+        
+        const response = await apiRequest('admin_sync.php?action=test_connection');
+        
+        if (response.success) {
+            if (response.data.connection_ok) {
+                mostrarToast('✅ Conexión con la API externa exitosa', 'success');
+            } else {
+                mostrarToast('❌ No se pudo conectar con la API externa', 'error');
+            }
+        } else {
+            throw new Error(response.error || 'Error probando conexión');
+        }
+        
+    } catch (error) {
+        console.error('Error probando conexión:', error);
+        mostrarToast('Error probando conexión: ' + error.message, 'error');
+    }
 }
 
 // Función para mostrar notificaciones

@@ -1,6 +1,6 @@
 -- =============================================
 -- Base de datos: Apartamentos Turísticos CyL
--- Schema corregido
+-- Schema completo con mejoras del mapa
 -- =============================================
  
 CREATE DATABASE IF NOT EXISTS apartamentos_cyl
@@ -45,7 +45,9 @@ CREATE TABLE apartamentos (
     INDEX idx_municipio (municipio),
     INDEX idx_coordenadas (gps_latitud, gps_longitud),
     INDEX idx_plazas (plazas),
-    INDEX idx_accesible (accesible)
+    INDEX idx_accesible (accesible),
+    INDEX idx_gps_completo (activo, gps_latitud, gps_longitud, provincia),
+    INDEX idx_provincia_activo (provincia, activo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
  
 -- =============================================
@@ -143,8 +145,10 @@ INSERT INTO usuarios (nombre, apellidos, email, password, rol, activo, verificad
 );
  
 -- =============================================
--- Vista: estadísticas por provincia
+-- VISTAS OPTIMIZADAS
 -- =============================================
+
+-- Vista: estadísticas por provincia
 CREATE OR REPLACE VIEW vista_estadisticas_provincia AS
 SELECT
     provincia,
@@ -156,3 +160,59 @@ FROM apartamentos
 WHERE activo = TRUE
 GROUP BY provincia
 ORDER BY total_apartamentos DESC;
+
+-- Vista: estadísticas de provincias con GPS
+CREATE OR REPLACE VIEW vista_provincias_gps AS
+SELECT 
+    provincia,
+    COUNT(*) as total,
+    SUM(CASE WHEN gps_latitud IS NOT NULL AND gps_longitud IS NOT NULL THEN 1 ELSE 0 END) as con_gps,
+    SUM(CASE WHEN gps_latitud IS NULL OR gps_longitud IS NULL THEN 1 ELSE 0 END) as sin_gps,
+    ROUND(
+        (SUM(CASE WHEN gps_latitud IS NOT NULL AND gps_longitud IS NOT NULL THEN 1 ELSE 0 END) * 100.0) / COUNT(*),
+        1
+    ) as porcentaje_gps
+FROM apartamentos
+WHERE activo = TRUE AND provincia IS NOT NULL
+GROUP BY provincia
+ORDER BY provincia;
+
+-- Vista: apartamentos del mapa (optimizada)
+CREATE OR REPLACE VIEW vista_mapa_apartamentos AS
+SELECT 
+    id,
+    nombre,
+    provincia,
+    municipio,
+    localidad,
+    nucleo,
+    gps_latitud,
+    gps_longitud,
+    plazas,
+    accesible
+FROM apartamentos
+WHERE activo = TRUE 
+  AND gps_latitud IS NOT NULL 
+  AND gps_longitud IS NOT NULL;
+
+-- =============================================
+-- VERIFICACIÓN Y ESTADÍSTICAS INICIALES
+-- =============================================
+
+-- Verificar índices creados
+SHOW INDEX FROM apartamentos;
+
+-- Mostrar estadísticas de provincias con GPS
+SELECT * FROM vista_provincias_gps;
+
+-- Contar totales
+SELECT 
+    COUNT(*) as total_apartamentos,
+    SUM(CASE WHEN gps_latitud IS NOT NULL AND gps_longitud IS NOT NULL THEN 1 ELSE 0 END) as con_gps,
+    SUM(CASE WHEN gps_latitud IS NULL OR gps_longitud IS NULL THEN 1 ELSE 0 END) as sin_gps,
+    ROUND(
+        (SUM(CASE WHEN gps_latitud IS NOT NULL AND gps_longitud IS NOT NULL THEN 1 ELSE 0 END) * 100.0) / COUNT(*),
+        1
+    ) as porcentaje_gps
+FROM apartamentos
+WHERE activo = TRUE;
