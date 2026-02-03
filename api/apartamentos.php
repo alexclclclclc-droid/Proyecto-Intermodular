@@ -17,6 +17,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../dao/ApartamentoDAO.php';
+require_once __DIR__ . '/../utils/gps_generator.php';
+
+// Generar coordenadas GPS automáticamente si es necesario (silencioso)
+try {
+    $verificacion = GPSGenerator::verificarApartamentosSinGPS();
+    if ($verificacion['success'] && $verificacion['necesita_generacion']) {
+        GPSGenerator::generarCoordenadasAutomaticamente();
+    }
+} catch (Exception $e) {
+    // Error silencioso - no interrumpir la API
+    error_log("Error generando GPS automáticamente en API: " . $e->getMessage());
+}
 
 $apartamentoDAO = new ApartamentoDAO();
 $action = $_GET['action'] ?? 'listar';

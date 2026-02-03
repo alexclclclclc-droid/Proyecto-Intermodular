@@ -4,6 +4,7 @@
  * Ejecutar después de hacer pull del repositorio
  */
 require_once 'config/config.php';
+require_once 'utils/gps_generator.php';
 
 echo "<h1>🗺️ Configuración del Mapa - Setup para Equipo</h1>";
 echo "<p>Este script verifica y configura todo lo necesario para que el mapa funcione.</p>";
@@ -48,7 +49,17 @@ try {
     
     if ($conGps == 0 && $total > 0) {
         echo "<p>⚠️ <strong>PROBLEMA:</strong> Los apartamentos no tienen coordenadas GPS</p>";
-        echo "<p>🔧 <strong>Solución:</strong> <a href='#generar-gps'>Generar coordenadas GPS</a></p>";
+        echo "<p>🔧 <strong>Solución:</strong> Generando automáticamente...</p>";
+        
+        // Generar coordenadas automáticamente usando la utilidad
+        $resultado = GPSGenerator::generarCoordenadasAutomaticamente();
+        
+        if ($resultado['success']) {
+            echo "<p>✅ <strong>SOLUCIONADO:</strong> {$resultado['message']}</p>";
+            echo "<p>🎉 <strong>¡El mapa ya debería funcionar perfectamente!</strong></p>";
+        } else {
+            echo "<p>❌ <strong>ERROR:</strong> {$resultado['error']}</p>";
+        }
     }
     
 } catch (Exception $e) {
@@ -123,76 +134,27 @@ echo "<p>Si no tienes apartamentos en tu base de datos:</p>";
 echo "<p><a href='api/sync.php' class='btn btn-primary' target='_blank'>🔄 Sincronizar Apartamentos</a></p>";
 echo "</div>";
 
-// Botón para generar GPS
+// Botón para generar GPS (manual, por si se necesita regenerar)
 echo "<div id='generar-gps'>";
-echo "<h3>📍 Generar Coordenadas GPS</h3>";
-echo "<p>Si tienes apartamentos pero sin coordenadas GPS:</p>";
+echo "<h3>📍 Regenerar Coordenadas GPS (Opcional)</h3>";
+echo "<p>Si necesitas regenerar las coordenadas GPS manualmente:</p>";
 echo "<form method='post' style='margin: 10px 0;'>";
-echo "<button type='submit' name='generar_gps' class='btn btn-success'>🗺️ Generar Coordenadas GPS</button>";
+echo "<button type='submit' name='generar_gps' class='btn btn-success'>🗺️ Regenerar Coordenadas GPS</button>";
 echo "</form>";
+echo "<p><small><em>Nota: Las coordenadas se generan automáticamente cuando es necesario.</em></small></p>";
 echo "</div>";
 
 // Procesar generación de GPS
 if (isset($_POST['generar_gps'])) {
-    echo "<h3>🎯 Generando Coordenadas GPS...</h3>";
+    echo "<h3>🎯 Regenerando Coordenadas GPS...</h3>";
+    $resultado = GPSGenerator::generarCoordenadasAutomaticamente();
     
-    // Coordenadas de las capitales de provincia
-    $coordenadasProvincias = [
-        'Ávila' => ['lat' => 40.6566, 'lng' => -4.6813],
-        'Burgos' => ['lat' => 42.3439, 'lng' => -3.6969],
-        'León' => ['lat' => 42.5987, 'lng' => -5.5671],
-        'Palencia' => ['lat' => 42.0098, 'lng' => -4.5288],
-        'Salamanca' => ['lat' => 40.9701, 'lng' => -5.6635],
-        'Segovia' => ['lat' => 40.9429, 'lng' => -4.1088],
-        'Soria' => ['lat' => 41.7665, 'lng' => -2.4790],
-        'Valladolid' => ['lat' => 41.6523, 'lng' => -4.7245],
-        'Zamora' => ['lat' => 41.5034, 'lng' => -5.7467]
-    ];
-    
-    try {
-        $conn = Database::getInstance()->getConnection();
-        
-        // Obtener apartamentos sin GPS
-        $stmt = $conn->query("
-            SELECT id, nombre, municipio, provincia 
-            FROM apartamentos 
-            WHERE activo = 1 
-            AND (gps_latitud IS NULL OR gps_longitud IS NULL OR gps_latitud = '' OR gps_longitud = '')
-        ");
-        
-        $apartamentosSinGPS = $stmt->fetchAll();
-        $actualizados = 0;
-        
-        foreach ($apartamentosSinGPS as $apt) {
-            $provincia = $apt['provincia'];
-            
-            if (isset($coordenadasProvincias[$provincia])) {
-                $base = $coordenadasProvincias[$provincia];
-            } else {
-                $base = ['lat' => 41.6523, 'lng' => -4.7245]; // Centro de CyL
-            }
-            
-            // Variación aleatoria pequeña
-            $lat = $base['lat'] + (mt_rand(-100, 100) / 1000);
-            $lng = $base['lng'] + (mt_rand(-100, 100) / 1000);
-            
-            $updateStmt = $conn->prepare("
-                UPDATE apartamentos 
-                SET gps_latitud = :lat, gps_longitud = :lng 
-                WHERE id = :id
-            ");
-            
-            if ($updateStmt->execute([':lat' => $lat, ':lng' => $lng, ':id' => $apt['id']])) {
-                $actualizados++;
-            }
-        }
-        
-        echo "<p>✅ <strong>Coordenadas generadas para $actualizados apartamentos</strong></p>";
-        echo "<p>🎉 <strong>¡El mapa ya debería funcionar!</strong></p>";
+    if ($resultado['success']) {
+        echo "<p>✅ <strong>{$resultado['message']}</strong></p>";
+        echo "<p>🎉 <strong>¡El mapa ya debería funcionar perfectamente!</strong></p>";
         echo "<p><a href='views/mapa.php' class='btn btn-primary'>🗺️ Probar el mapa</a></p>";
-        
-    } catch (Exception $e) {
-        echo "<p>❌ Error generando coordenadas: " . $e->getMessage() . "</p>";
+    } else {
+        echo "<p>❌ <strong>Error:</strong> {$resultado['error']}</p>";
     }
 }
 
@@ -205,10 +167,19 @@ echo "<p><a href='views/mapa.php' class='btn btn-primary' target='_blank'>🗺�
 echo "<h2>📋 Instrucciones para el Equipo</h2>";
 echo "<ol>";
 echo "<li><strong>Hacer pull</strong> del repositorio</li>";
-echo "<li><strong>Ejecutar este script</strong> (setup_mapa_equipo.php)</li>";
-echo "<li><strong>Seguir las soluciones</strong> que aparezcan en rojo</li>";
-echo "<li><strong>Probar el mapa</strong> con el botón de arriba</li>";
+echo "<li><strong>Ejecutar este script</strong> (setup_mapa_equipo.php) - <em>Las coordenadas GPS se generan automáticamente</em></li>";
+echo "<li><strong>Probar el mapa</strong> - Debería funcionar inmediatamente</li>";
+echo "<li><strong>Si hay problemas</strong>, seguir las soluciones que aparezcan en rojo</li>";
 echo "</ol>";
+
+echo "<h2>🎉 ¡Nuevo! Generación Automática de GPS</h2>";
+echo "<p>✅ <strong>Las coordenadas GPS ahora se generan automáticamente</strong> cuando:</p>";
+echo "<ul>";
+echo "<li>Ejecutas este script de configuración</li>";
+echo "<li>Cargas el mapa y detecta apartamentos sin coordenadas</li>";
+echo "<li>Se sincronizan nuevos apartamentos desde la API</li>";
+echo "</ul>";
+echo "<p>🚀 <strong>¡Ya no necesitas hacer nada manualmente!</strong></p>";
 
 echo "<h2>🆘 Si Sigue Sin Funcionar</h2>";
 echo "<ul>";

@@ -4,6 +4,18 @@
  */
 define('ROOT_PATH', dirname(__DIR__) . '/');
 require_once ROOT_PATH . 'config/config.php';
+require_once ROOT_PATH . 'utils/gps_generator.php';
+
+// Generar coordenadas GPS automáticamente si es necesario
+try {
+    $verificacion = GPSGenerator::verificarApartamentosSinGPS();
+    if ($verificacion['success'] && $verificacion['necesita_generacion']) {
+        GPSGenerator::generarCoordenadasAutomaticamente();
+    }
+} catch (Exception $e) {
+    // Error silencioso - no interrumpir la carga de la página
+    error_log("Error generando GPS automáticamente: " . $e->getMessage());
+}
 
 $pageTitle = 'Mapa';
 

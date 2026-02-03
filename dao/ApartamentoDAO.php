@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/Apartamento.php';
+require_once __DIR__ . '/../utils/gps_generator.php';
 
 class ApartamentoDAO {
     private PDO $conn;
@@ -19,6 +20,16 @@ class ApartamentoDAO {
      * Insertar o actualizar apartamento (UPSERT)
      */
     public function upsert(Apartamento $apartamento): bool {
+        // Si el apartamento no tiene coordenadas GPS, generarlas automáticamente
+        if (empty($apartamento->getGpsLatitud()) || empty($apartamento->getGpsLongitud())) {
+            $coordenadas = GPSGenerator::generarCoordenadasParaNuevoApartamento([
+                'provincia' => $apartamento->getProvincia()
+            ]);
+            
+            $apartamento->setGpsLatitud($coordenadas['lat']);
+            $apartamento->setGpsLongitud($coordenadas['lng']);
+        }
+        
         $sql = "INSERT INTO {$this->table} 
                 (n_registro, nombre, direccion, codigo_postal, 
                  provincia, municipio, localidad, nucleo, telefono_1, telefono_2, 
@@ -46,8 +57,8 @@ class ApartamentoDAO {
                 plazas = VALUES(plazas),
                 categoria = VALUES(categoria),
                 especialidades = VALUES(especialidades),
-                gps_latitud = VALUES(gps_latitud),
-                gps_longitud = VALUES(gps_longitud),
+                gps_latitud = COALESCE(gps_latitud, VALUES(gps_latitud)),
+                gps_longitud = COALESCE(gps_longitud, VALUES(gps_longitud)),
                 accesible = VALUES(accesible),
                 fecha_sincronizacion = NOW()";
 

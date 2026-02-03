@@ -1,109 +1,47 @@
-# 🗺️ Mapa Interactivo - Guía de Configuración para el Equipo
+# 🗺️ Mapa Interactivo - Completamente Automático
 
-## 🚀 Configuración Rápida
+## 🚀 **¡Plug & Play!**
 
-Después de hacer `git pull`, ejecuta estos pasos:
+El mapa ahora es **completamente automático**. No necesitas ejecutar ningún script ni configuración adicional.
 
-### 1. **Ejecutar Script de Configuración**
-```
-http://localhost/tu-proyecto/setup_mapa_equipo.php
-```
-
-### 2. **Seguir las Instrucciones**
-El script te dirá exactamente qué hacer según tu situación.
+### ✅ **Para cualquier persona:**
+1. **Accede a la página** → `views/mapa.php`
+2. **¡Listo!** - El mapa funciona inmediatamente con todos los marcadores
 
 ---
 
-## 🔧 Problemas Comunes y Soluciones
+## 🔄 **Generación Automática Transparente**
 
-### ❌ **"El mapa está vacío"**
-**Causa:** No tienes apartamentos con coordenadas GPS
-**Solución:** 
-1. Ve a `setup_mapa_equipo.php`
-2. Haz clic en "Generar Coordenadas GPS"
+Las coordenadas GPS se generan automáticamente y de forma transparente cuando:
 
-### ❌ **"Error al cargar provincias"**
-**Causa:** No tienes datos de apartamentos
-**Solución:**
-1. Ve a `api/sync.php` para sincronizar datos
-2. Luego ejecuta `setup_mapa_equipo.php`
+- ✅ **Accedes al mapa** (`views/mapa.php`)
+- ✅ **Accedes a la página principal** (`index.php`)
+- ✅ **Se llama a la API** (`api/apartamentos.php`)
+- ✅ **Se sincronizan apartamentos** (`api/sync.php`)
+- ✅ **Se insertan nuevos apartamentos** (automático en DAO)
 
-### ❌ **"APIs no funcionan"**
-**Causa:** Problema de configuración de base de datos
-**Solución:**
-1. Verifica `config/database.php`
-2. Asegúrate de que tu base de datos esté corriendo
+## 🎯 **Completamente Transparente**
 
----
+- **Sin botones que pulsar**
+- **Sin scripts que ejecutar**
+- **Sin configuración manual**
+- **Sin pasos adicionales**
 
-## 📁 Archivos del Mapa
+## 📁 **Archivos Modificados para Automatización**
 
-```
-views/mapa.php              # Página principal del mapa
-api/apartamentos.php        # API para datos del mapa
-dao/ApartamentoDAO.php      # Acceso a datos
-public/js/app.js            # JavaScript principal
-setup_mapa_equipo.php       # Script de configuración (EJECUTAR PRIMERO)
-```
+- `views/mapa.php` - Generación automática al cargar
+- `index.php` - Generación automática al cargar
+- `api/apartamentos.php` - Generación automática en API
+- `api/sync.php` - Generación automática después de sincronizar
+- `dao/ApartamentoDAO.php` - Generación automática al insertar
+- `utils/gps_generator.php` - Optimizado con caché
 
----
+## 💡 **Para Desarrolladores**
 
-## 🧪 Verificar que Funciona
-
-1. **APIs funcionan:**
-   - `api/apartamentos.php?action=provincias` → Debe devolver JSON con provincias
-   - `api/apartamentos.php?action=mapa` → Debe devolver JSON con apartamentos
-
-2. **Mapa funciona:**
-   - `views/mapa.php` → Debe mostrar mapa con marcadores 🏠
-
-3. **Consola del navegador:**
-   - Presiona F12 → Console
-   - Ejecuta `diagnosticarMapa()` para información detallada
+Si necesitas verificar el estado o forzar regeneración:
+- `setup_mapa_equipo.php` - Script de diagnóstico y configuración manual
+- `api/gps.php` - API endpoints para manejo de GPS
 
 ---
 
-## 🆘 Si Nada Funciona
-
-1. **Verifica tu entorno:**
-   - ¿Está corriendo tu servidor web (XAMPP/WAMP/MAMP)?
-   - ¿Está corriendo MySQL?
-   - ¿Tienes la base de datos creada?
-
-2. **Verifica la configuración:**
-   - `config/database.php` → Credenciales correctas
-   - `config/config.php` → URLs correctas
-
-3. **Ejecuta paso a paso:**
-   ```
-   1. setup_mapa_equipo.php  (diagnóstico)
-   2. api/sync.php           (si no tienes datos)
-   3. setup_mapa_equipo.php  (generar GPS si es necesario)
-   4. views/mapa.php         (probar mapa)
-   ```
-
----
-
-## ✅ Funcionalidades del Mapa
-
-Una vez configurado, el mapa incluye:
-
-- 🗺️ **Mapa interactivo** de Castilla y León
-- 🏠 **Marcadores** para cada apartamento
-- 🔍 **Filtrado por provincia**
-- 📋 **Modal de detalles** al hacer clic en "Ver detalles"
-- 📅 **Sistema de reservas** al hacer clic en "Reservar"
-- 📱 **Responsive** para móviles
-
----
-
-## 💡 Consejos
-
-- **Siempre ejecuta `setup_mapa_equipo.php` primero** después de hacer pull
-- **Si cambias la base de datos**, vuelve a ejecutar el script
-- **Para debugging**, usa `diagnosticarMapa()` en la consola del navegador
-- **El script es seguro**, solo lee y configura, no borra datos
-
----
-
-¿Problemas? Revisa la consola del navegador (F12) y ejecuta `diagnosticarMapa()` para más información.
+**¡El mapa ahora funciona inmediatamente para cualquier persona sin configuración!** 🎉

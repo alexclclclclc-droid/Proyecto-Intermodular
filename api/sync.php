@@ -11,6 +11,7 @@ $permitirSinLogin = true;
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../services/ApiSyncService.php';
+require_once __DIR__ . '/../utils/gps_generator.php';
 
 // Si se ejecuta desde web, verificar permisos
 if (php_sapi_name() !== 'cli') {
@@ -38,6 +39,20 @@ try {
     foreach ($resultado['log'] as $linea) {
         echo $linea . "\n";
     }
+    
+    // Generar coordenadas GPS automáticamente después de la sincronización
+    echo "\n=== GENERANDO COORDENADAS GPS ===\n";
+    try {
+        $gpsResultado = GPSGenerator::generarCoordenadasAutomaticamente();
+        if ($gpsResultado['success']) {
+            echo "✅ {$gpsResultado['message']}\n";
+        } else {
+            echo "❌ Error generando GPS: {$gpsResultado['error']}\n";
+        }
+    } catch (Exception $e) {
+        echo "❌ Error generando GPS: " . $e->getMessage() . "\n";
+    }
+    
     echo "</pre>";
 
 } catch (Exception $e) {
