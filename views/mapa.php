@@ -190,20 +190,121 @@ $extraCSS = '<style>
         padding: 6px 12px;
     }
     
-    /* Responsive */
-    @media (max-width: 768px) {
+    /* Responsive - MOBILE FIRST */
+    .mapa-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-md);
+    }
+    
+    .mapa-controls select {
+        width: 100%;
+        min-width: auto;
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: var(--space-md);
+        min-height: 44px; /* Touch target */
+    }
+    
+    #mapa-container {
+        height: 50vh;
+        min-height: 300px;
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+    
+    /* Popup mobile optimization */
+    .leaflet-popup-content {
+        margin: var(--space-sm) var(--space-md);
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+    
+    .leaflet-popup-content h4 {
+        font-size: 1rem;
+        margin-bottom: var(--space-sm);
+    }
+    
+    .popup-buttons {
+        margin-top: var(--space-md);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-xs);
+    }
+    
+    .popup-buttons .btn {
+        width: 100%;
+        font-size: 0.8rem;
+        padding: var(--space-sm);
+        min-height: 36px;
+    }
+    
+    /* Marker mobile optimization */
+    .custom-marker {
+        font-size: 12px;
+        min-width: 24px;
+        min-height: 24px;
+    }
+    
+    /* Tablets (768px+) */
+    @media (min-width: 768px) {
         .mapa-controls {
-            flex-direction: column;
-            align-items: stretch;
+            flex-direction: row;
+            align-items: center;
+            gap: var(--space-md);
         }
         
         .mapa-controls select {
-            width: 100%;
+            width: auto;
+            min-width: 200px;
+            font-size: 1rem;
+            min-height: auto;
         }
         
         #mapa-container {
             height: calc(100vh - var(--header-height) - 200px);
-            min-height: 400px;
+            min-height: 500px;
+        }
+        
+        .popup-buttons {
+            flex-direction: row;
+        }
+        
+        .popup-buttons .btn {
+            flex: 1;
+            width: auto;
+            min-height: auto;
+        }
+        
+        .leaflet-popup-content {
+            margin: 12px 16px;
+            font-size: 0.9rem;
+        }
+        
+        .leaflet-popup-content h4 {
+            font-size: 1.1rem;
+        }
+        
+        .custom-marker {
+            font-size: 14px;
+            min-width: 30px;
+            min-height: 30px;
+        }
+    }
+    
+    /* Large screens (1200px+) */
+    @media (min-width: 1200px) {
+        #mapa-container {
+            height: 70vh;
+            min-height: 600px;
+        }
+    }
+    
+    /* Landscape mobile optimization */
+    @media (max-height: 500px) and (orientation: landscape) {
+        #mapa-container {
+            height: 40vh;
+            min-height: 250px;
         }
     }
 </style>';

@@ -181,16 +181,16 @@ const provinciaColors = {
 
 
 
-<!-- Estilos para la gráfica -->
+<!-- Estilos para la gráfica - MOBILE FIRST -->
 <style>
 .chart-container {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
     align-items: center;
-    max-width: 900px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: var(--space-xl);
+    padding: var(--space-md);
     background: white;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -198,8 +198,9 @@ const provinciaColors = {
 
 .chart-wrapper {
     position: relative;
-    width: 400px;
-    height: 400px;
+    width: 100%;
+    max-width: 280px;
+    height: 280px;
     margin: 0 auto;
 }
 
@@ -217,10 +218,11 @@ const provinciaColors = {
 }
 
 .chart-stats {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-lg);
-    min-width: 200px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+    width: 100%;
+    max-width: 300px;
 }
 
 .chart-stat-item {
@@ -232,24 +234,25 @@ const provinciaColors = {
 }
 
 .chart-stat-value {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--color-primary);
     margin-bottom: var(--space-xs);
 }
 
 .chart-stat-label {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: var(--color-text-muted);
     font-weight: 500;
 }
 
 .chart-legend {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--space-md);
-    margin-top: var(--space-xl);
-    max-width: 900px;
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+    width: 100%;
+    max-width: 600px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -264,23 +267,24 @@ const provinciaColors = {
     border: 1px solid var(--color-border);
     transition: all 0.2s ease;
     cursor: pointer;
+    min-height: 44px; /* Touch target */
 }
 
 .legend-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .legend-color {
-    width: 16px;
-    height: 16px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     flex-shrink: 0;
 }
 
 .legend-image {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     object-fit: cover;
     border-radius: 4px;
     flex-shrink: 0;
@@ -289,22 +293,22 @@ const provinciaColors = {
 
 .legend-text {
     flex: 1;
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 500;
 }
 
 .legend-count {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: var(--color-text-muted);
     font-weight: 600;
 }
 
 .provincia-icon-img {
-    width: 64px;
-    height: 64px;
+    width: 48px;
+    height: 48px;
     object-fit: cover;
-    border-radius: 8px;
-    margin-bottom: var(--space-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-sm);
     border: 2px solid var(--color-border);
     transition: all 0.2s ease;
 }
@@ -322,7 +326,7 @@ const provinciaColors = {
     color: white;
     padding: 4px 8px;
     border-radius: 12px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -332,36 +336,106 @@ const provinciaColors = {
     opacity: 1;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* Small mobile (480px+) */
+@media (min-width: 480px) {
     .chart-container {
-        grid-template-columns: 1fr;
-        gap: var(--space-lg);
         padding: var(--space-lg);
     }
     
     .chart-wrapper {
-        width: 300px;
-        height: 300px;
+        max-width: 320px;
+        height: 320px;
     }
     
     .chart-stats {
-        flex-direction: row;
-        justify-content: space-around;
-        min-width: auto;
-    }
-    
-    .chart-stat-item {
-        flex: 1;
-        margin: 0 var(--space-xs);
+        grid-template-columns: repeat(3, 1fr);
+        max-width: 400px;
     }
     
     .chart-stat-value {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
+    }
+    
+    .chart-stat-label {
+        font-size: 0.875rem;
+    }
+    
+    .legend-item {
+        gap: var(--space-md);
+    }
+    
+    .legend-image {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .legend-text,
+    .legend-count {
+        font-size: 0.875rem;
+    }
+    
+    .provincia-icon-img {
+        width: 56px;
+        height: 56px;
+        margin-bottom: var(--space-md);
+    }
+}
+
+/* Tablets (768px+) */
+@media (min-width: 768px) {
+    .chart-container {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: var(--space-xl);
+        align-items: center;
+        max-width: 900px;
+        padding: var(--space-xl);
+    }
+    
+    .chart-wrapper {
+        max-width: 400px;
+        height: 400px;
+    }
+    
+    .chart-stats {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-lg);
+        min-width: 200px;
+        max-width: none;
+    }
+    
+    .chart-stat-value {
+        font-size: 2rem;
     }
     
     .chart-legend {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--space-md);
+        margin-top: var(--space-xl);
+        max-width: 900px;
+    }
+    
+    .legend-color {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .legend-image {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .provincia-icon-img {
+        width: 64px;
+        height: 64px;
+    }
+}
+
+/* Large screens (1200px+) */
+@media (min-width: 1200px) {
+    .chart-legend {
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 </style>

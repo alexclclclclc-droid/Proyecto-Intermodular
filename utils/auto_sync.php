@@ -11,7 +11,9 @@ require_once __DIR__ . '/../utils/gps_generator.php';
 class AutoSyncManager {
     private const SYNC_LOCK_FILE = __DIR__ . '/../temp/sync.lock';
     private const LAST_SYNC_FILE = __DIR__ . '/../temp/last_sync.txt';
-    private const SYNC_INTERVAL = 3600; // 1 hora en segundos
+    private const SYNC_INTERVAL = 86400; // 24 horas en segundos (1 día)
+    private const SYNC_HOUR = 22; // Hora de sincronización (22:30 - después de que CyL actualice a las 22:00)
+    private const SYNC_MINUTE = 30; // Minuto de sincronización
     
     public function __construct() {
         // Crear directorio temp si no existe
@@ -30,21 +32,47 @@ class AutoSyncManager {
             return false;
         }
         
-        // Verificar tiempo desde última sincronización
+        // Verificar si ya se sincronizó hoy
         if (!file_exists(self::LAST_SYNC_FILE)) {
-            return true;
+            return $this->isTimeToSync();
         }
         
         $lastSync = (int)file_get_contents(self::LAST_SYNC_FILE);
-        $timeSinceLastSync = time() - $lastSync;
+        $lastSyncDate = date('Y-m-d', $lastSync);
+        $today = date('Y-m-d');
         
-        return $timeSinceLastSync >= self::SYNC_INTERVAL;
+        // Si ya se sincronizó hoy, no es necesario
+        if ($lastSyncDate === $today) {
+            return false;
+        }
+        
+        // Si no se ha sincronizado hoy, verificar si es la hora correcta
+        return $this->isTimeToSync();
+    }
+    
+    /**
+     * Verificar si es la hora correcta para sincronizar
+     */
+    private function isTimeToSync(): bool {
+        $currentHour = (int)date('H');
+        $currentMinute = (int)date('i');
+        
+        // Sincronizar después de las 22:30 (cuando CyL ya ha actualizado sus datos)
+        if ($currentHour > self::SYNC_HOUR) {
+            return true;
+        }
+        
+        if ($currentHour === self::SYNC_HOUR && $currentMinute >= self::SYNC_MINUTE) {
+            return true;
+        }
+        
+        return false;
     }
     
     /**
      * Ejecutar sincronización automática
      */
-    public function executeAutoSync(): array {
+    public function executeAutoSync(bool $silentMode = true): array {
         if (!$this->needsSync()) {
             return [
                 'success' => true,
@@ -57,7 +85,7 @@ class AutoSyncManager {
         $this->createLock();
         
         try {
-            $service = new ApiSyncService();
+            $service = new ApiSyncService($silentMode);
             $resultado = $service->sincronizar();
             
             // Generar GPS si es necesario
@@ -171,23 +199,45 @@ class AutoSyncManager {
         $lastSync = file_exists(self::LAST_SYNC_FILE) ? 
             (int)file_get_contents(self::LAST_SYNC_FILE) : null;
         
-        $nextSync = $lastSync ? $lastSync + self::SYNC_INTERVAL : time();
+        // Calcular próxima sincronización
+        $nextSync = $this->getNextSyncTime();
         
         return [
             'enabled' => true,
             'last_sync' => $lastSync ? date('Y-m-d H:i:s', $lastSync) : 'Nunca',
             'next_sync' => date('Y-m-d H:i:s', $nextSync),
-            'interval_hours' => self::SYNC_INTERVAL / 3600,
+            'sync_time' => sprintf('%02d:%02d', self::SYNC_HOUR, self::SYNC_MINUTE),
+            'interval_hours' => 24,
             'is_locked' => $this->isLocked(),
-            'needs_sync' => $this->needsSync()
+            'needs_sync' => $this->needsSync(),
+            'current_time' => date('Y-m-d H:i:s'),
+            'is_time_to_sync' => $this->isTimeToSync()
         ];
+    }
+    
+    /**
+     * Calcular la próxima hora de sincronización
+     */
+    private function getNextSyncTime(): int {
+        $now = time();
+        $today = date('Y-m-d');
+        $syncTimeToday = strtotime($today . ' ' . self::SYNC_HOUR . ':' . self::SYNC_MINUTE . ':00');
+        
+        // Si ya pasó la hora de hoy, programar para mañana
+        if ($now >= $syncTimeToday) {
+            return strtotime('+1 day', $syncTimeToday);
+        }
+        
+        // Si aún no es la hora de hoy, usar la hora de hoy
+        return $syncTimeToday;
     }
 }
 
 // Si se ejecuta directamente (desde cron o línea de comandos)
 if (php_sapi_name() === 'cli' || (isset($_GET['auto']) && $_GET['auto'] === '1')) {
     $manager = new AutoSyncManager();
-    $result = $manager->executeAutoSync();
+    // Para CLI y ejecución directa, usar modo no silencioso para mostrar progreso
+    $result = $manager->executeAutoSync(false);
     
     if (php_sapi_name() === 'cli') {
         echo "Auto Sync Result: " . json_encode($result, JSON_PRETTY_PRINT) . "\n";

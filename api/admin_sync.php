@@ -66,7 +66,7 @@ try {
             
         case 'execute':
             // Ejecutar sincronización completa
-            $service = new ApiSyncService();
+            $service = new ApiSyncService(false); // Modo no silencioso para admin
             
             // Capturar la salida para el log
             ob_start();
@@ -125,7 +125,7 @@ try {
             
         case 'test_connection':
             // Probar conexión con la API externa
-            $service = new ApiSyncService();
+            $service = new ApiSyncService(false); // Modo no silencioso para admin
             $conexionOk = $service->probarConexion();
             
             jsonResponse([

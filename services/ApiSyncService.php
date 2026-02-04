@@ -14,10 +14,12 @@ class ApiSyncService {
     private int $registrosActualizados = 0;
     private int $errores = 0;
     private array $log = [];
+    private bool $silentMode = false;
 
-    public function __construct() {
+    public function __construct(bool $silentMode = false) {
         $this->apiUrl = 'https://analisis.datosabiertos.jcyl.es/api/explore/v2.1/catalog/datasets/registro-de-turismo-de-castilla-y-leon/records';
         $this->apartamentoDAO = new ApartamentoDAO();
+        $this->silentMode = $silentMode;
     }
 
     public function sincronizar(): array {
@@ -220,9 +222,13 @@ class ApiSyncService {
     private function log(string $mensaje): void {
         $timestamp = date('Y-m-d H:i:s');
         $this->log[] = "[{$timestamp}] {$mensaje}";
-        echo "[{$timestamp}] {$mensaje}\n";
-        ob_flush();
-        flush();
+        
+        // Solo mostrar en pantalla si no estamos en modo silencioso
+        if (!$this->silentMode) {
+            echo "[{$timestamp}] {$mensaje}\n";
+            ob_flush();
+            flush();
+        }
     }
 
     public function getResultado(): array {

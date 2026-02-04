@@ -41,6 +41,9 @@ $viewsPath = $inViews ? './' : './views/';
 <body>
     <!-- Script de sincronización automática -->
     <script src="<?= $basePath ?>public/js/auto-sync.js"></script>
+    
+    <!-- Script de navegación móvil -->
+    <script src="<?= $basePath ?>public/js/mobile-nav.js"></script>
     <header class="header">
         <div class="container header-inner">
             <a href="<?= $basePath ?>index.php" class="logo">
@@ -66,18 +69,33 @@ $viewsPath = $inViews ? './' : './views/';
                         </a>
                     <?php endif; ?>
                 <?php endif; ?>
+                
+                <!-- Acciones de usuario dentro del menú móvil -->
+                <div class="nav-actions">
+                    <!-- Botón login (visible si no está logueado) -->
+                    <button id="btn-login" class="btn btn-primary btn-sm" data-modal-open="modal-login" style="<?= isLoggedIn() ? 'display:none' : '' ?>">
+                        Iniciar sesión
+                    </button>
+                    
+                    <!-- Menú usuario (visible si está logueado) -->
+                    <div id="user-menu" class="user-menu" style="<?= !isLoggedIn() ? 'display:none' : 'display:flex' ?>">
+                        <span id="user-name"><?= isLoggedIn() ? htmlspecialchars($_SESSION['usuario_nombre']) : '' ?></span>
+                        <button id="btn-logout" class="btn btn-ghost btn-sm">Salir</button>
+                    </div>
+                </div>
             </nav>
             
-            <div class="nav-actions">
+            <!-- Acciones de usuario para desktop (fuera del menú móvil) -->
+            <div class="nav-actions-desktop">
                 <!-- Botón login (visible si no está logueado) -->
-                <button id="btn-login" class="btn btn-primary btn-sm" data-modal-open="modal-login" style="<?= isLoggedIn() ? 'display:none' : '' ?>">
+                <button id="btn-login-desktop" class="btn btn-primary btn-sm" data-modal-open="modal-login" style="<?= isLoggedIn() ? 'display:none' : '' ?>">
                     Iniciar sesión
                 </button>
                 
                 <!-- Menú usuario (visible si está logueado) -->
-                <div id="user-menu" class="user-menu" style="<?= !isLoggedIn() ? 'display:none' : 'display:flex' ?>; align-items: center; gap: var(--space-md);">
-                    <span id="user-name" style="font-weight: 500;"><?= isLoggedIn() ? htmlspecialchars($_SESSION['usuario_nombre']) : '' ?></span>
-                    <button id="btn-logout" class="btn btn-ghost btn-sm">Salir</button>
+                <div id="user-menu-desktop" class="user-menu" style="<?= !isLoggedIn() ? 'display:none' : 'display:flex' ?>">
+                    <span id="user-name-desktop"><?= isLoggedIn() ? htmlspecialchars($_SESSION['usuario_nombre']) : '' ?></span>
+                    <button id="btn-logout-desktop" class="btn btn-ghost btn-sm">Salir</button>
                 </div>
             </div>
         </div>

@@ -6,7 +6,7 @@
 class AutoSyncManager {
     constructor() {
         this.isRunning = false;
-        this.checkInterval = 5 * 60 * 1000; // 5 minutos
+        this.checkInterval = 30 * 60 * 1000; // 30 minutos (verificar más frecuentemente cerca de la hora de sync)
         this.retryDelay = 30 * 1000; // 30 segundos
         this.maxRetries = 3;
         
@@ -31,9 +31,34 @@ class AutoSyncManager {
     startPeriodicCheck() {
         setInterval(() => {
             if (!document.hidden && !this.isRunning) {
-                this.checkAndSync();
+                // Verificar más frecuentemente cerca de la hora de sincronización (22:30)
+                const now = new Date();
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+                
+                // Entre las 22:00 y 23:30, verificar cada 5 minutos
+                if (currentHour === 22 || (currentHour === 23 && currentMinute <= 30)) {
+                    this.checkAndSync();
+                } else {
+                    // Resto del día, verificar cada 30 minutos
+                    this.checkAndSync();
+                }
             }
         }, this.checkInterval);
+        
+        // Verificación adicional cada 5 minutos durante la ventana de sincronización
+        setInterval(() => {
+            if (!document.hidden && !this.isRunning) {
+                const now = new Date();
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+                
+                // Solo durante la ventana de sincronización
+                if (currentHour === 22 || (currentHour === 23 && currentMinute <= 30)) {
+                    this.checkAndSync();
+                }
+            }
+        }, 5 * 60 * 1000); // 5 minutos
     }
     
     async checkAndSync() {

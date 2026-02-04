@@ -87,8 +87,8 @@ if ($isWindows) {
     echo "<pre>crontab -e</pre>\n";
     echo "<p>Y agregar esta línea:</p>\n";
     echo "<pre>";
-    echo "# Sincronización automática cada hora\n";
-    echo "0 * * * * {$phpPath} {$projectPath}/utils/auto_sync.php >/dev/null 2>&1\n";
+    echo "# Sincronización automática diaria a las 22:30 (después de actualización de CyL)\n";
+    echo "30 22 * * * {$phpPath} {$projectPath}/utils/auto_sync.php >/dev/null 2>&1\n";
     echo "</pre>\n";
     
     echo "<p>Para verificar que se agregó correctamente:</p>\n";
@@ -99,13 +99,13 @@ if ($isWindows) {
 echo "<h2>5. Alternativas de Sincronización</h2>\n";
 echo "<h3>A. Sincronización por JavaScript (Recomendado)</h3>\n";
 echo "<p style='color: green;'>✅ Ya configurado - Se ejecuta automáticamente en el navegador</p>\n";
-echo "<p>El sistema JavaScript verifica cada 5 minutos si es necesario sincronizar.</p>\n";
+echo "<p>El sistema JavaScript verifica periódicamente si es necesario sincronizar (una vez al día a las 22:30).</p>\n";
 
 echo "<h3>B. Sincronización manual desde Admin</h3>\n";
 echo "<p>Los administradores pueden forzar sincronización desde el panel de admin.</p>\n";
 
 echo "<h3>C. URL para webhook/cron externo</h3>\n";
-echo "<p>Puedes configurar un servicio externo para llamar esta URL cada hora:</p>\n";
+echo "<p>Puedes configurar un servicio externo para llamar esta URL diariamente a las 22:30:</p>\n";
 $baseUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']);
 echo "<pre>{$baseUrl}/utils/auto_sync.php?auto=1</pre>\n";
 
@@ -115,8 +115,8 @@ echo "<div style='background: #f0f8ff; padding: 15px; border-radius: 5px; margin
 echo "<h4>✅ Sistema de Sincronización Automática Instalado</h4>\n";
 echo "<p><strong>Características instaladas:</strong></p>\n";
 echo "<ul>\n";
-echo "<li>🔄 Sincronización automática en JavaScript (cada 5 minutos)</li>\n";
-echo "<li>⏰ Sistema de intervalos inteligente (1 hora entre sincronizaciones)</li>\n";
+echo "<li>🔄 Sincronización automática en JavaScript (diaria a las 22:30)</li>\n";
+echo "<li>⏰ Sistema de intervalos inteligente (una vez al día después de actualización de CyL)</li>\n";
 echo "<li>🔒 Protección contra ejecuciones simultáneas</li>\n";
 echo "<li>📝 Logging automático de todas las sincronizaciones</li>\n";
 echo "<li>🛠️ Panel de control en Admin</li>\n";

@@ -239,7 +239,7 @@ flush();
 ob_flush();
 
 try {
-    $service = new ApiSyncService();
+    $service = new ApiSyncService(false); // Modo no silencioso para mostrar progreso
     
     // Callback para reportar progreso
     $currentProgress = 0;

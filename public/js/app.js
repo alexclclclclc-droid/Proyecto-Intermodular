@@ -887,13 +887,25 @@ const AuthModule = {
     },
 
     updateUI(isLoggedIn, userData = null) {
+        // Elementos móviles
         const loginBtn = document.getElementById('btn-login');
         const userMenu = document.getElementById('user-menu');
         const userName = document.getElementById('user-name');
+        
+        // Elementos desktop
+        const loginBtnDesktop = document.getElementById('btn-login-desktop');
+        const userMenuDesktop = document.getElementById('user-menu-desktop');
+        const userNameDesktop = document.getElementById('user-name-desktop');
 
+        // Actualizar elementos móviles
         if (loginBtn) loginBtn.style.display = isLoggedIn ? 'none' : 'inline-flex';
         if (userMenu) userMenu.style.display = isLoggedIn ? 'flex' : 'none';
         if (userName && userData) userName.textContent = userData.nombre;
+        
+        // Actualizar elementos desktop
+        if (loginBtnDesktop) loginBtnDesktop.style.display = isLoggedIn ? 'none' : 'inline-flex';
+        if (userMenuDesktop) userMenuDesktop.style.display = isLoggedIn ? 'flex' : 'none';
+        if (userNameDesktop && userData) userNameDesktop.textContent = userData.nombre;
     },
 
     async login(email, password) {
@@ -1485,10 +1497,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Logout
+    // Logout - manejar tanto móvil como desktop
     const logoutBtn = document.getElementById('btn-logout');
+    const logoutBtnDesktop = document.getElementById('btn-logout-desktop');
+    
     if (logoutBtn) {
         logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            AuthModule.logout();
+        });
+    }
+    
+    if (logoutBtnDesktop) {
+        logoutBtnDesktop.addEventListener('click', (e) => {
             e.preventDefault();
             AuthModule.logout();
         });

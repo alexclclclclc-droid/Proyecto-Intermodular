@@ -27,7 +27,7 @@ try {
     echo "<pre>"; // Para mejor visualización en navegador
     echo "=== INICIANDO SINCRONIZACIÓN ===\n\n";
     
-    $service = new ApiSyncService();
+    $service = new ApiSyncService(false); // Modo no silencioso para mostrar progreso
     $resultado = $service->sincronizar();
     
     echo "\n=== SINCRONIZACIÓN COMPLETADA ===\n";
