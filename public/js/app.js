@@ -501,6 +501,8 @@ const ApartamentosModule = {
         if (provinciaSelect) {
             provinciaSelect.addEventListener('change', (e) => {
                 this.currentFilters.provincia = e.target.value;
+                // Resetear el filtro de municipio cuando cambia la provincia
+                this.currentFilters.municipio = '';
                 this.loadMunicipios(e.target.value);
                 this.currentPage = 1;
                 this.loadApartamentos();
