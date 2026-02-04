@@ -1103,8 +1103,6 @@ const ReservaModule = {
                 } else {
                     this.showAvailabilityInfo('✕ El apartamento no está disponible en estas fechas. Por favor, selecciona otras fechas.', 'error');
                     this.disableConfirmButton();
-                    // Sugerir fechas alternativas
-                    this.suggestAlternativeDates(apartamentoId);
                 }
             } else {
                 throw new Error(response.error || 'Error al verificar disponibilidad');
@@ -1201,75 +1199,6 @@ const ReservaModule = {
                 response.errors.forEach(error => showToast(error, 'error'));
             } else {
                 showToast(response.error || 'Error al crear la reserva', 'error');
-            }
-        }
-    },
-
-    async suggestAlternativeDates(apartamentoId) {
-        try {
-            // Obtener fechas ocupadas para sugerir alternativas
-            const response = await apiRequest(`reservas.php?action=fechas_ocupadas&id_apartamento=${apartamentoId}`);
-            
-            if (response.success && response.data) {
-                // Lógica simple para sugerir fechas alternativas
-                const today = new Date();
-                const suggestions = [];
-                
-                // Sugerir próximas 3 semanas disponibles
-                for (let i = 1; i <= 21; i += 7) {
-                    const startDate = new Date(today.getTime() + i * 24 * 60 * 60 * 1000);
-                    const endDate = new Date(startDate.getTime() + 3 * 24 * 60 * 60 * 1000);
-                    
-                    const startStr = startDate.toISOString().split('T')[0];
-                    const endStr = endDate.toISOString().split('T')[0];
-                    
-                    // Verificar si estas fechas están libres
-                    const isOccupied = response.data.some(ocupada => {
-                        return (startStr >= ocupada.fecha_entrada && startStr < ocupada.fecha_salida) ||
-                               (endStr > ocupada.fecha_entrada && endStr <= ocupada.fecha_salida) ||
-                               (startStr <= ocupada.fecha_entrada && endStr >= ocupada.fecha_salida);
-                    });
-                    
-                    if (!isOccupied) {
-                        suggestions.push({
-                            entrada: startStr,
-                            salida: endStr,
-                            formatted: `${formatDate(startStr)} - ${formatDate(endStr)}`
-                        });
-                    }
-                    
-                    if (suggestions.length >= 2) break;
-                }
-                
-                if (suggestions.length > 0) {
-                    const suggestionHtml = suggestions.map(s => 
-                        `<button class="btn btn-ghost btn-sm" onclick="ReservaModule.applySuggestedDates('${s.entrada}', '${s.salida}')" style="margin: 2px;">
-                            ${s.formatted}
-                        </button>`
-                    ).join('');
-                    
-                    this.showAvailabilityInfo(
-                        `✕ No disponible en estas fechas. Prueba estas alternativas: ${suggestionHtml}`, 
-                        'error'
-                    );
-                }
-            }
-        } catch (error) {
-            console.error('Error getting alternative dates:', error);
-        }
-    },
-
-    applySuggestedDates(fechaEntrada, fechaSalida) {
-        const entradaInput = document.getElementById('reserva-fecha-entrada');
-        const salidaInput = document.getElementById('reserva-fecha-salida');
-        
-        if (entradaInput && salidaInput) {
-            entradaInput.value = fechaEntrada;
-            salidaInput.value = fechaSalida;
-            
-            // Verificar disponibilidad de las nuevas fechas
-            if (this.currentApartamento) {
-                this.checkDisponibilidad(this.currentApartamento.id, fechaEntrada, fechaSalida);
             }
         }
     }
