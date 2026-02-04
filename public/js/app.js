@@ -39,6 +39,74 @@ function getIndexPath() {
     return './index.php';
 }
 
+// ===================================
+// MAPEO DE IMÁGENES DE PROVINCIAS
+// ===================================
+
+// Función para obtener la ruta base correcta de las imágenes (dinámica)
+const getImageBasePath = () => {
+    const path = window.location.pathname;
+    // Si estamos en views/, usar ../public/images/
+    // Si estamos en raíz, usar ./public/images/
+    return path.includes('/views/') ? '../public/images' : './public/images';
+};
+
+// Imágenes de monumentos para las provincias (rutas dinámicas)
+const getProvinciaImages = () => {
+    const basePath = getImageBasePath();
+    return {
+        'Ávila': `${basePath}/MurallaÁvila.webp`,
+        'Burgos': `${basePath}/CatedralBurgos.webp`,
+        'León': `${basePath}/CatedralLeon.webp`,
+        'Palencia': `${basePath}/FromistaPalencia.webp`,
+        'Salamanca': `${basePath}/UniversidadSalamanca.webp`,
+        'Segovia': `${basePath}/AcueductoSegovia.webp`,
+        'Soria': `${basePath}/CatedralSoria.webp`,
+        'Valladolid': `${basePath}/MuseoValladolid.webp`,
+        'Zamora': `${basePath}/CastilloZamora.webp`
+    };
+};
+
+// Crear el objeto de imágenes al cargar
+const provinciaImages = getProvinciaImages();
+
+// Función helper para obtener imagen por provincia
+function getProvinciaImage(provincia) {
+    const basePath = getImageBasePath();
+    return provinciaImages[provincia] || `${basePath}/default-placeholder.svg`;
+}
+
+// Función para crear elemento de imagen optimizado
+function createOptimizedImage(src, alt, className = '', size = 'medium') {
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = alt;
+    img.className = className;
+    img.loading = 'lazy';
+    
+    // Tamaños predefinidos
+    const sizes = {
+        small: { width: '24px', height: '24px' },
+        medium: { width: '32px', height: '32px' },
+        large: { width: '48px', height: '48px' }
+    };
+    
+    if (sizes[size]) {
+        img.style.width = sizes[size].width;
+        img.style.height = sizes[size].height;
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '4px';
+    }
+    
+    // Manejo de errores
+    img.onerror = function() {
+        this.src = '../public/images/default-placeholder.svg';
+        console.warn(`Error cargando imagen de provincia: ${src}`);
+    };
+    
+    return img;
+}
+
 
 /**
  * Realiza peticiones a la API con manejo robusto de errores
@@ -589,10 +657,16 @@ const ApartamentosModule = {
         const accesibleBadge = apt.accesible ? 
             '<span class="badge badge-accent">♿ Accesible</span>' : '';
         
+        const provinciaImage = getProvinciaImage(apt.provincia);
+        
         return `
             <article class="card" data-id="${apt.id}">
                 <div class="card-image">
-                    <span class="card-image-placeholder">🏠</span>
+                    <img src="${provinciaImage}" 
+                         alt="Monumento de ${apt.provincia}" 
+                         class="card-image-monument"
+                         loading="lazy"
+                         onerror="this.src='../public/images/default-placeholder.svg'">
                     ${apt.plazas > 6 ? '<span class="card-badge">Grande</span>' : ''}
                 </div>
                 <div class="card-body">
