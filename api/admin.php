@@ -163,7 +163,6 @@ try {
                 ];
                 
             } catch (Exception $e) {
-                error_log("Error en estadísticas de apartamentos: " . $e->getMessage());
                 // Valores por defecto en caso de error
                 $stats['apartamentos']['total'] = 0;
                 $stats['apartamentos']['ocupados'] = 0;
@@ -481,7 +480,6 @@ try {
     }
 
 } catch (Exception $e) {
-    error_log("Admin API Error: " . $e->getMessage());
     jsonResponse([
         'success' => false,
         'error' => DEBUG_MODE ? $e->getMessage() : 'Error interno del servidor'

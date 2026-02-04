@@ -266,7 +266,6 @@ try {
     }
 
 } catch (Exception $e) {
-    error_log("Reservas API Error: " . $e->getMessage());
     jsonResponse([
         'success' => false,
         'error' => DEBUG_MODE ? $e->getMessage() : 'Error interno del servidor'

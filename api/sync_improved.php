@@ -291,7 +291,6 @@ try {
     echo "showFinalStatus(false, { procesados: 0, nuevos: 0, actualizados: 0, errores: 1 });\n";
     echo "</script>\n";
     
-    error_log("Error en sincronización: " . $e->getMessage());
 }
 ?>
 

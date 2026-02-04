@@ -27,7 +27,6 @@ try {
     }
 } catch (Exception $e) {
     // Error silencioso - no interrumpir la API
-    error_log("Error generando GPS automáticamente en API: " . $e->getMessage());
 }
 
 $apartamentoDAO = new ApartamentoDAO();
@@ -173,7 +172,6 @@ try {
     }
 
 } catch (Exception $e) {
-    error_log("API Error: " . $e->getMessage());
     jsonResponse([
         'success' => false,
         'error' => DEBUG_MODE ? $e->getMessage() : 'Error interno del servidor'

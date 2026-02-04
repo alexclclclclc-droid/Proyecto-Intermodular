@@ -189,7 +189,6 @@ function registrarSincronizacion($resultado, $gpsResultado = null) {
         
     } catch (Exception $e) {
         // Error silencioso - no interrumpir la sincronización
-        error_log("Error registrando historial de sincronización: " . $e->getMessage());
     }
 }
 
@@ -242,7 +241,6 @@ function crearTablaSyncHistory() {
         $conn->exec($sql);
         
     } catch (Exception $e) {
-        error_log("Error creando tabla sync_history: " . $e->getMessage());
     }
 }
 ?>

@@ -142,24 +142,20 @@ const AdminModule = {
     refreshInterval: null,
     
     init() {
-        console.log('Inicializando AdminModule'); // Debug
         this.bindEvents();
         this.loadSection('dashboard');
         this.startAutoRefresh();
     },
 
     bindEvents() {
-        console.log('Vinculando eventos'); // Debug
         
         // Navegación entre secciones
         document.querySelectorAll('.admin-nav-link').forEach((link, index) => {
-            console.log(`Vinculando evento para botón ${index}:`, link.dataset.section); // Debug
             
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 const section = link.dataset.section;
-                console.log('Click en sección:', section); // Debug
                 if (section) {
                     this.loadSection(section);
                 }
@@ -191,7 +187,6 @@ const AdminModule = {
     },
 
     loadSection(section) {
-        console.log('Cargando sección:', section); // Debug
         
         // Actualizar navegación
         document.querySelectorAll('.admin-nav-link').forEach(link => {
