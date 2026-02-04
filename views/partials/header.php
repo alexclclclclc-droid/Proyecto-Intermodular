@@ -103,7 +103,7 @@ $viewsPath = $inViews ? './' : './views/';
 
     <!-- Modal Login -->
     <div id="modal-login" class="modal-overlay">
-        <div class="modal">
+        <div class="modal" style="max-width: 600px; width: 600px;">
             <div class="modal-header">
                 <h3 class="modal-title">Iniciar sesión</h3>
                 <button class="modal-close" data-modal-close>&times;</button>
@@ -136,7 +136,7 @@ $viewsPath = $inViews ? './' : './views/';
 
     <!-- Modal Registro -->
     <div id="modal-registro" class="modal-overlay">
-        <div class="modal">
+        <div class="modal" style="max-width: 600px; width: 600px;">
             <div class="modal-header">
                 <h3 class="modal-title">Crear cuenta</h3>
                 <button class="modal-close" data-modal-close>&times;</button>
@@ -212,7 +212,7 @@ $viewsPath = $inViews ? './' : './views/';
 
     <!-- Modal Reserva -->
     <div id="modal-reserva" class="modal-overlay">
-        <div class="modal" style="max-width: 500px;">
+        <div class="modal" style="max-width: 650px; width: 650px; min-height: 600px;">
             <div class="modal-header">
                 <h3 class="modal-title">Reservar apartamento</h3>
                 <button class="modal-close" data-modal-close>&times;</button>
@@ -257,8 +257,8 @@ $viewsPath = $inViews ? './' : './views/';
                         </select>
                     </div>
                     
-                    <div id="disponibilidad-info" class="alert" style="display: none; margin-bottom: var(--space-lg);">
-                        <!-- Información de disponibilidad -->
+                    <div id="disponibilidad-info" class="alert" style="min-height: 70px; height: 70px; margin-bottom: var(--space-lg); display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; text-align: center;">
+                        &nbsp;
                     </div>
                     
                     <div class="form-group">

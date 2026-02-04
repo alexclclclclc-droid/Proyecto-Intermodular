@@ -889,6 +889,36 @@ main {
     transform: scale(1) translateY(0);
 }
 
+/* Tamaños específicos para modales de login y reserva */
+#modal-login .modal,
+#modal-registro .modal {
+    max-width: 600px !important;
+    width: 600px !important;
+}
+
+#modal-reserva .modal {
+    max-width: 650px !important;
+    width: 650px !important;
+    min-height: 600px !important;
+}
+
+/* Responsive: En móviles, usar ancho completo pero mantener proporciones */
+@media (max-width: 768px) {
+    #modal-login .modal,
+    #modal-registro .modal {
+        width: 95% !important;
+        max-width: 95% !important;
+        min-width: 320px !important;
+    }
+    
+    #modal-reserva .modal {
+        width: 95% !important;
+        max-width: 95% !important;
+        min-width: 320px !important;
+        min-height: 500px !important;
+    }
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -941,6 +971,27 @@ main {
     padding: var(--space-md) var(--space-lg);
     border-radius: var(--radius-md);
     margin-bottom: var(--space-lg);
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+/* Estilos específicos para el elemento de disponibilidad */
+#disponibilidad-info {
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+#disponibilidad-info.checking {
+    background: var(--color-info-bg);
+    color: var(--color-info);
+}
+
+#disponibilidad-info.success {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+#disponibilidad-info.error {
+    background: var(--color-error-bg);
+    color: var(--color-error);
 }
 
 .alert-icon {

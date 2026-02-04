@@ -12,7 +12,6 @@ USE apartamentos_cyl;
 -- =============================================
 -- Tabla: apartamentos
 -- =============================================
-DROP TABLE IF EXISTS favoritos;
 DROP TABLE IF EXISTS reservas;
 DROP TABLE IF EXISTS apartamentos;
  
@@ -96,21 +95,6 @@ CREATE TABLE reservas (
     INDEX idx_estado (estado),
     INDEX idx_usuario (id_usuario),
     INDEX idx_apartamento (id_apartamento)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
- 
--- =============================================
--- Tabla: favoritos
--- =============================================
-CREATE TABLE favoritos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    id_usuario INT NOT NULL,
-    id_apartamento INT NOT NULL,
-    fecha_agregado TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-   
-    FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE,
-    FOREIGN KEY (id_apartamento) REFERENCES apartamentos(id) ON DELETE CASCADE,
-   
-    UNIQUE KEY unique_favorito (id_usuario, id_apartamento)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
  
 -- =============================================

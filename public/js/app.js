@@ -1122,13 +1122,20 @@ const ReservaModule = {
 
         container.textContent = message;
         container.className = `alert disponibilidad-info ${type}`;
-        container.style.display = 'block';
+        container.style.visibility = 'visible';
+        container.style.opacity = '1';
     },
 
     hideAvailabilityInfo() {
         const container = document.getElementById('disponibilidad-info');
         if (container) {
-            container.style.display = 'none';
+            container.style.opacity = '0';
+            // Usar setTimeout para ocultar después de la transición
+            setTimeout(() => {
+                container.style.visibility = 'hidden';
+                // Mantener un espacio en blanco para preservar la altura
+                container.innerHTML = '&nbsp;';
+            }, 200); // Coincide con la duración de la transición CSS
         }
     },
 
